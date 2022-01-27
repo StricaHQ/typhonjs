@@ -1,0 +1,10 @@
+{
+  "entryPoints": ["src/index.ts"],
+  "out": "docs",
+  "includeVersion": true,
+  "disableSources": true,
+  "excludeProtected": true,
+  "excludePrivate": true,
+  "hideGenerator": true,
+  "theme": "default"
+}

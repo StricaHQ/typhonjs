@@ -1,0 +1,63 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "extends": ["airbnb-base", "prettier"],
+  "plugins": ["import", "@typescript-eslint", "prettier"],
+  "rules": {
+    "func-names": ["error", "never"],
+    "prettier/prettier": ["error"],
+    "arrow-parens": ["error", "always"],
+    "consistent-return": "off",
+    "arrow-body-style": "off",
+    "object-shorthand": "off",
+    "lines-between-class-members": "off",
+    "@typescript-eslint/lines-between-class-members": "off",
+    "no-shadow": "off",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": ["error"],
+    "no-underscore-dangle": "off",
+    "no-param-reassign": "off",
+    "no-restricted-syntax": "off",
+    "import/no-cycle": "off",
+    "prefer-destructuring": [
+      "error",
+      {
+        "VariableDeclarator": {
+          "array": false,
+          "object": false
+        },
+        "AssignmentExpression": {
+          "array": false,
+          "object": false
+        }
+      },
+      {
+        "enforceForRenamedProperties": false
+      }
+    ],
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      {
+        "js": "never",
+        "jsx": "never",
+        "ts": "never",
+        "tsx": "never"
+      }
+    ],
+    "no-await-in-loop": 0
+  },
+  "env": {
+    "node": true,
+    "mocha": true,
+    "commonjs": true,
+    "es6": true
+  },
+  "globals": {},
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".ts"]
+      }
+    }
+  }
+}
