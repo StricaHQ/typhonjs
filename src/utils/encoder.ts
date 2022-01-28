@@ -267,16 +267,16 @@ export const encodePlutusData = (plutusData: PlutusDataConstructor): EncodedPlut
     if (
       !(
         keys.every((val) => PlutusDataObjectKeys.includes(val)) &&
-        plutusData.fields instanceof Array
+        pConstructor.fields instanceof Array
       )
     ) {
       throw new Error("Invalid PlutusData supplied");
     }
     // array is definite length if empty
     let fields: Array<unknown> = [];
-    if (plutusData.fields.length > 0) {
+    if (pConstructor.fields.length > 0) {
       fields = new cbors.IndefiniteArray();
-      for (const field of plutusData.fields) {
+      for (const field of pConstructor.fields) {
         fields.push(encodePlutusDataTypes(field));
       }
     }
@@ -287,7 +287,7 @@ export const encodePlutusData = (plutusData: PlutusDataConstructor): EncodedPlut
       const mask = pConstructor.constructor - 7;
       return new cbors.CborTag(fields, 1280 + mask);
     }
-    return new cbors.CborTag([plutusData.constructor, fields], 102);
+    return new cbors.CborTag([pConstructor.constructor, fields], 102);
   };
   const encodePlutusDataTypes = (subPlutusData: PlutusData): unknown => {
     if (subPlutusData instanceof Array) {
@@ -297,7 +297,10 @@ export const encodePlutusData = (plutusData: PlutusDataConstructor): EncodedPlut
       }
       return ary;
     }
-    if (subPlutusData instanceof Buffer) {
+    if (subPlutusData instanceof Uint8Array) {
+      return Buffer.from(subPlutusData);
+    }
+    if (subPlutusData instanceof Buffer || subPlutusData instanceof Uint8Array) {
       return subPlutusData;
     }
     if (typeof subPlutusData === "string") {
