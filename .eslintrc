@@ -1,7 +1,7 @@
 {
   "parser": "@typescript-eslint/parser",
   "extends": ["airbnb-base", "prettier"],
-  "plugins": ["import", "@typescript-eslint", "prettier"],
+  "plugins": ["@typescript-eslint", "prettier"],
   "rules": {
     "func-names": ["error", "never"],
     "prettier/prettier": ["error"],
@@ -17,7 +17,6 @@
     "no-underscore-dangle": "off",
     "no-param-reassign": "off",
     "no-restricted-syntax": "off",
-    "import/no-cycle": "off",
     "prefer-destructuring": [
       "error",
       {
