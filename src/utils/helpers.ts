@@ -1,9 +1,10 @@
+/* eslint-disable no-use-before-define */
 import { Buffer } from "buffer";
 import * as cbors from "@stricahq/cbors";
 import BigNumber from "bignumber.js";
 import _ from "lodash";
 import { encodeLanguageViews } from "./encoder";
-import { LanguageView, Token, WitnessType } from "../types";
+import { LanguageView, NativeScript, Token, WitnessType } from "../types";
 import { hash32 } from "./crypto";
 import { EncodedWitnesses } from "../internal-types";
 
@@ -108,4 +109,30 @@ export const generateScriptDataHash = (
     return hash32(scriptData);
   }
   return undefined;
+};
+
+const getPubKeyHashFromNativeScripts = (nativeScripts: Array<NativeScript>) => {
+  let pubKeyHashList: Array<string> = [];
+  for (const ns of nativeScripts) {
+    const result = getPubKeyHashListFromNativeScript(ns);
+    pubKeyHashList = _.concat(pubKeyHashList, _.flatten(result));
+  }
+  return pubKeyHashList;
+};
+
+export const getPubKeyHashListFromNativeScript = (nativeScript: any): Array<string> => {
+  let pubKeyHashList: Array<string> = [];
+  if (nativeScript.pubKeyHash) {
+    pubKeyHashList.push(nativeScript.pubKeyHash);
+  } else if (nativeScript.all) {
+    const result = getPubKeyHashFromNativeScripts(nativeScript.all);
+    pubKeyHashList = _.concat(pubKeyHashList, _.flatten(result));
+  } else if (nativeScript.any) {
+    const result = getPubKeyHashFromNativeScripts(nativeScript.any);
+    pubKeyHashList = _.concat(pubKeyHashList, _.flatten(result));
+  } else if (nativeScript.n) {
+    const result = getPubKeyHashFromNativeScripts(nativeScript.k);
+    pubKeyHashList = _.concat(pubKeyHashList, _.flatten(result));
+  }
+  return pubKeyHashList;
 };

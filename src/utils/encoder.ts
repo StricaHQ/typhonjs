@@ -10,7 +10,6 @@ import {
   PlutusDataConstructor,
   PlutusData,
   CollateralInput,
-  HashType,
   LanguageView,
   AuxiliaryData,
   Certificate,
@@ -21,10 +20,11 @@ import {
   StakeDeRegistrationCertificate,
   StakeRegistrationCertificate,
   Token,
-  TokenBundle,
   VKeyWitness,
   Withdrawal,
   PlutusScriptType,
+  NativeScript,
+  Mint,
 } from "../types";
 import { sanitizeMetadata } from "./helpers";
 import { hash32 } from "./crypto";
@@ -46,6 +46,8 @@ import {
   EncodedWithdrawals,
   EncodedWitnesses,
   RedeemerTag,
+  EncodedNativeScript,
+  TokenBundle,
 } from "../internal-types";
 
 export const encodeInputs = (inputs: Array<Input>): Array<EncodedInput> => {
@@ -79,6 +81,19 @@ export const encodeOutputTokens = (tokens: Array<Token>): EncodedTokens => {
     });
     policyIdMap.set(Buffer.from(policyId, "hex"), tokenMap);
   });
+  return policyIdMap;
+};
+
+export const encodeMint = (mints: Array<Mint>): EncodedTokens => {
+  const policyIdMap = new Map<Buffer, Map<Buffer, BigNumber>>();
+  for (const mint of mints) {
+    const tokenMap = new Map<Buffer, BigNumber>();
+    mint.assets.forEach(({ assetName, amount }) => {
+      tokenMap.set(Buffer.from(assetName, "hex"), amount);
+    });
+    policyIdMap.set(Buffer.from(mint.policyId, "hex"), tokenMap);
+  }
+
   return policyIdMap;
 };
 
@@ -175,23 +190,24 @@ export const encodeVKeyWitness = (vKeyWitness: Array<VKeyWitness>): Array<Encode
 export const encodeWitnesses = (
   vKeyWitness: Array<VKeyWitness>,
   inputs: Array<Input>,
-  plutusDataList: Array<PlutusDataConstructor>
+  plutusDataList: Array<PlutusDataConstructor>,
+  plutusScriptMap: Map<string, PlutusScriptType>,
+  nativeScripts: Array<NativeScript>,
+  mints: Array<Mint>
 ): EncodedWitnesses => {
   const encodedWitnesses: EncodedWitnesses = new Map();
   encodedWitnesses.set(WitnessType.V_KEY_WITNESS, encodeVKeyWitness(vKeyWitness));
 
   const sortedInputs = _.orderBy(inputs, ["txId", "index"], ["asc", "asc"]);
+  const sortedMints = _.orderBy(mints, ["policyId"], ["asc"]);
   const encodedRedeemers: Array<EncodedRedeemer> = [];
-  const plutusScriptMap: Map<string, PlutusScriptType> = new Map();
   const encodedPlutusDataMap: Map<string, EncodedPlutusData> = new Map();
 
-  if (plutusDataList.length > 0) {
-    for (const d of plutusDataList) {
-      const encodedPlutusData = encodePlutusData(d);
-      const edCbor = cbors.Encoder.encode(encodedPlutusData);
-      const edHash = hash32(edCbor);
-      encodedPlutusDataMap.set(edHash.toString("hex"), encodedPlutusData);
-    }
+  for (const d of plutusDataList) {
+    const encodedPlutusData = encodePlutusData(d);
+    const edCbor = cbors.Encoder.encode(encodedPlutusData);
+    const edHash = hash32(edCbor);
+    encodedPlutusDataMap.set(edHash.toString("hex"), encodedPlutusData);
   }
 
   for (const [index, input] of sortedInputs.entries()) {
@@ -204,21 +220,20 @@ export const encodeWitnesses = (
         [input.redeemer.exUnits.mem, input.redeemer.exUnits.steps],
       ]);
     }
-    if (input.address.paymentCredential.type === HashType.SCRIPT) {
-      if (input.address.paymentCredential.plutusScript) {
-        plutusScriptMap.set(
-          input.address.paymentCredential.plutusScript.cborHex,
-          input.address.paymentCredential.plutusScript.type
-        );
-      }
-    }
-    if (input.plutusData) {
-      const encodedPlutusData = encodePlutusData(input.plutusData);
-      const edCbor = cbors.Encoder.encode(encodedPlutusData);
-      const edHash = hash32(edCbor);
-      encodedPlutusDataMap.set(edHash.toString("hex"), encodedPlutusData);
+  }
+
+  for (const [index, mint] of sortedMints.entries()) {
+    if (mint.plutusScript && mint.redeemer) {
+      const encodedPlutusData = encodePlutusData(mint.redeemer.plutusData);
+      encodedRedeemers.push([
+        RedeemerTag.MINT,
+        index,
+        encodedPlutusData,
+        [mint.redeemer.exUnits.mem, mint.redeemer.exUnits.steps],
+      ]);
     }
   }
+
   const encodedPlutusDataList: EncodedPlutusData = [];
   for (const [, encodedPlutusData] of encodedPlutusDataMap) {
     encodedPlutusDataList.push(encodedPlutusData);
@@ -235,6 +250,23 @@ export const encodeWitnesses = (
   if (encodedPlutusScriptsV1.length) {
     encodedWitnesses.set(WitnessType.PLUTUS_SCRIPT, encodedPlutusScriptsV1);
   }
+
+  const encodedNativeScriptMap: Map<string, EncodedNativeScript> = new Map();
+  for (const ns of nativeScripts) {
+    const encodedNativeScript = encodeNativeScript(ns);
+    const nsCbor = cbors.Encoder.encode(encodedNativeScript);
+    encodedNativeScriptMap.set(nsCbor.toString("hex"), encodedNativeScript);
+  }
+
+  const encodedNativeScripts = [];
+  for (const [, encodedNS] of encodedNativeScriptMap) {
+    encodedNativeScripts.push(encodedNS);
+  }
+
+  if (encodedNativeScripts.length) {
+    encodedWitnesses.set(WitnessType.NATIVE_SCRIPT, encodedNativeScripts);
+  }
+
   if (encodedPlutusDataList.length)
     encodedWitnesses.set(WitnessType.PLUTUS_DATA, encodedPlutusDataList);
 
@@ -300,7 +332,7 @@ export const encodePlutusData = (plutusData: PlutusDataConstructor): EncodedPlut
     if (subPlutusData instanceof Uint8Array) {
       return Buffer.from(subPlutusData);
     }
-    if (subPlutusData instanceof Buffer || subPlutusData instanceof Uint8Array) {
+    if (subPlutusData instanceof Buffer) {
       return subPlutusData;
     }
     if (typeof subPlutusData === "string") {
@@ -354,4 +386,34 @@ export const encodeLanguageViews = (
   }
 
   return cbors.Encoder.encode(encodedLanguageView).toString("hex");
+};
+
+const encodeNativeScripts = (nativeScripts: Array<NativeScript>) => {
+  const encodedNativeScripts: Array<EncodedNativeScript> = [];
+  for (const ns of nativeScripts) {
+    encodedNativeScripts.push(encodeNativeScript(ns));
+  }
+  return encodedNativeScripts;
+};
+
+export const encodeNativeScript = (nativeScript: any): EncodedNativeScript => {
+  if (nativeScript.pubKeyHash) {
+    return [0, Buffer.from(nativeScript.pubKeyHash, "hex")];
+  }
+  if (nativeScript.all) {
+    return [1, encodeNativeScripts(nativeScript.all)];
+  }
+  if (nativeScript.any) {
+    return [2, encodeNativeScripts(nativeScript.any)];
+  }
+  if (nativeScript.n) {
+    return [3, nativeScript.n, encodeNativeScripts(nativeScript.k)];
+  }
+  if (nativeScript.invalidBefore) {
+    return [4, nativeScript.invalidBefore];
+  }
+  if (nativeScript.invalidAfter) {
+    return [4, nativeScript.invalidAfter];
+  }
+  throw new Error("Invalid native script");
 };

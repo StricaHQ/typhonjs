@@ -407,7 +407,7 @@ describe("Typhonjs", (): void => {
     });
 
     describe("outputs/change", () => {
-      describe("output scenario 1", () => {
+      describe("output scenario 1 without tokens", () => {
         const output: types.Output = {
           amount: new BigNumber(5000000),
           address: stub.receiverAddress,
@@ -434,15 +434,12 @@ describe("Typhonjs", (): void => {
         it("change output", () => {
           expect(outputs[1].address.getBech32()).to.eq(stub.changeAddress.getBech32());
           expect(outputs[1].amount.toNumber()).to.eq(
-            stub.UTXOs[stub.UTXOs.length - 1].amount
-              .minus(output.amount)
-              .minus(tx.getFee())
-              .toNumber()
+            stub.UTXOs[0].amount.minus(output.amount).minus(tx.getFee()).toNumber()
           );
         });
       });
 
-      describe("output scenario 2", () => {
+      describe("output scenario 2 with tokens", () => {
         const output: types.Output = {
           amount: new BigNumber(5000000),
           address: stub.receiverAddress,
@@ -470,8 +467,8 @@ describe("Typhonjs", (): void => {
         it("change output", () => {
           expect(outputs[1].address.getBech32()).to.eq(stub.changeAddress.getBech32());
           expect(outputs[1].amount.toNumber()).to.eq(
-            stub.UTXOs[stub.UTXOs.length - 2].amount
-              .plus(stub.UTXOs[stub.UTXOs.length - 1].amount)
+            stub.UTXOs[0].amount
+              .plus(stub.UTXOs[1].amount)
               .minus(output.amount)
               .minus(tx.getFee())
               .toNumber()
@@ -479,6 +476,31 @@ describe("Typhonjs", (): void => {
           expect(outputs[1].tokens[0].amount.toNumber()).to.eq(
             stub.tokens[0].amount.minus(output.tokens[0].amount).toNumber()
           );
+        });
+      });
+
+      describe("output scenario 3 remaining ADA as fees", () => {
+        const output: types.Output = {
+          amount: new BigNumber(49000000),
+          address: stub.receiverAddress,
+          tokens: [],
+        };
+        const tx = new Transaction({ protocolParams: stub.pParams }).paymentTransaction({
+          inputs: [stub.UTXOs[0]],
+          outputs: [output],
+          changeAddress: stub.changeAddress,
+          ttl: 3000000,
+        });
+
+        const outputs = tx.getOutputs();
+
+        it("output count", () => {
+          expect(outputs.length).to.eq(1);
+        });
+
+        it("receiver output", () => {
+          expect(outputs[0].address.getBech32()).to.eq(stub.receiverAddress.getBech32());
+          expect(outputs[0].amount.toNumber()).to.eq(output.amount.toNumber());
         });
       });
     });

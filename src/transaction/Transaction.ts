@@ -3,7 +3,12 @@ import * as cbors from "@stricahq/cbors";
 import BigNumber from "bignumber.js";
 import _ from "lodash";
 
-import { generateScriptDataHash, getUniqueTokens, sortTokens } from "../utils/helpers";
+import {
+  generateScriptDataHash,
+  getPubKeyHashListFromNativeScript,
+  getUniqueTokens,
+  sortTokens,
+} from "../utils/helpers";
 
 import {
   CardanoAddress,
@@ -11,7 +16,10 @@ import {
   CollateralInput,
   HashCredential,
   HashType,
+  Mint,
+  NativeScript,
   PlutusDataConstructor,
+  PlutusScriptType,
   ProtocolParams,
   TransactionBodyItemType,
 } from "../types";
@@ -30,6 +38,7 @@ import {
   encodeCertificates,
   encodeCollaterals,
   encodeInputs,
+  encodeMint,
   encodeOutputs,
   encodeWithdrawals,
   encodeWitnesses,
@@ -47,14 +56,18 @@ export class Transaction {
   protected certificates: Array<Certificate> = [];
   protected withdrawals: Array<Withdrawal> = [];
   protected requiredWitnesses: Map<string, BipPath | undefined> = new Map();
+  protected requiredNativeScriptWitnesses: Map<string, undefined> = new Map();
   protected fee: BigNumber = new BigNumber(5000000);
   protected ttl: number | undefined = undefined;
   protected witnesses: Array<VKeyWitness> = [];
+  protected plutusScriptMap: Map<string, PlutusScriptType> = new Map();
+  protected nativeScriptList: Array<NativeScript> = [];
   protected auxiliaryData: AuxiliaryData | undefined = undefined;
   protected collaterals: Array<CollateralInput> = [];
   protected requiredSigners: Map<string, BipPath | undefined> = new Map();
   protected plutusDataList: Array<PlutusDataConstructor> = [];
   protected _isPlutusTransaction = false;
+  protected mints: Array<Mint> = [];
 
   constructor({ protocolParams }: { protocolParams: ProtocolParams }) {
     this._protocolParams = protocolParams;
@@ -78,17 +91,23 @@ export class Transaction {
         input.address.paymentCredential.hash,
         input.address.paymentCredential.bipPath
       );
-    } else if (input.redeemer) {
-      this._isPlutusTransaction = true;
+    } else if (input.address.paymentCredential.type === HashType.SCRIPT) {
+      if (input.address.paymentCredential.plutusScript) {
+        this._isPlutusTransaction = true;
+        this.plutusScriptMap.set(
+          input.address.paymentCredential.plutusScript.cborHex,
+          input.address.paymentCredential.plutusScript.type
+        );
+      }
+    }
+    if (input.plutusData) {
+      this.plutusDataList.push(input.plutusData);
     }
     this.inputs.push(input);
   }
 
   addRequiredSigner(credential: HashCredential): void {
-    if (!this.requiredWitnesses.get(credential.hash)) {
-      this.requiredSigners.set(credential.hash, credential.bipPath);
-      this.requiredWitnesses.set(credential.hash, credential.bipPath);
-    }
+    this.requiredSigners.set(credential.hash, credential.bipPath);
   }
 
   addCollateral(input: CollateralInput): void {
@@ -99,6 +118,22 @@ export class Transaction {
       );
     }
     this.collaterals.push(input);
+  }
+
+  addMint(mint: Mint): void {
+    this.mints.push(mint);
+    if (mint.plutusScript) {
+      this._isPlutusTransaction = true;
+      this.plutusScriptMap.set(mint.plutusScript.cborHex, mint.plutusScript.type);
+    } else if (mint.nativeScript) {
+      // used to guesstimate fees by required pkh witnesses inside nativescript
+      // this flow can be improved in future version
+      const pubKeyHashList = getPubKeyHashListFromNativeScript(mint.nativeScript);
+      for (const pkh of pubKeyHashList) {
+        this.requiredNativeScriptWitnesses.set(pkh, undefined);
+      }
+      this.nativeScriptList.push(mint.nativeScript);
+    }
   }
 
   addCertificate(certificate: Certificate): void {
@@ -183,6 +218,9 @@ export class Transaction {
         requiredSigners.map((key) => Buffer.from(key, "hex"))
       );
     }
+    if (!_.isEmpty(this.mints)) {
+      encodedBody.set(TransactionBodyItemType.MINT, encodeMint(this.mints));
+    }
 
     return encodedBody;
   }
@@ -205,20 +243,43 @@ export class Transaction {
       }
     }
 
+    for (const mint of this.mints) {
+      if (mint.redeemer) {
+        totalMem += mint.redeemer.exUnits.mem;
+        totalSteps += mint.redeemer.exUnits.steps;
+      }
+    }
+
     const memPrice = new BigNumber(totalMem).times(this._protocolParams.priceMem);
     const stepsPrice = new BigNumber(totalSteps).times(this._protocolParams.priceSteps);
     return memPrice.plus(stepsPrice).integerValue(BigNumber.ROUND_CEIL);
   }
 
   calculateFee(extraOutputs?: Array<Output>): BigNumber {
+    const combinedRequiredWitnesses: Map<string, BipPath | undefined> =
+      this.requiredNativeScriptWitnesses;
+    for (const [key, value] of this.requiredSigners.entries()) {
+      combinedRequiredWitnesses.set(key, value);
+    }
+    for (const [key, value] of this.requiredWitnesses.entries()) {
+      combinedRequiredWitnesses.set(key, value);
+    }
+
     const dummyWitnesses: Array<VKeyWitness> = [];
-    for (const [index] of Array.from(this.requiredWitnesses.keys()).entries()) {
+    for (const [index] of Array.from(combinedRequiredWitnesses.keys()).entries()) {
       dummyWitnesses.push({
         publicKey: Buffer.alloc(32, index),
         signature: Buffer.alloc(64),
       });
     }
-    const encodedWitnesses = encodeWitnesses(dummyWitnesses, this.inputs, this.plutusDataList);
+    const encodedWitnesses = encodeWitnesses(
+      dummyWitnesses,
+      this.inputs,
+      this.plutusDataList,
+      this.plutusScriptMap,
+      this.nativeScriptList,
+      this.mints
+    );
     const scriptDataHash = generateScriptDataHash(
       encodedWitnesses,
       this._protocolParams.languageView
@@ -258,7 +319,14 @@ export class Transaction {
   }
 
   getTransactionHash(): Buffer {
-    const encodedWitnesses = encodeWitnesses(this.witnesses, this.inputs, this.plutusDataList);
+    const encodedWitnesses = encodeWitnesses(
+      this.witnesses,
+      this.inputs,
+      this.plutusDataList,
+      this.plutusScriptMap,
+      this.nativeScriptList,
+      this.mints
+    );
     const scriptDataHash = generateScriptDataHash(
       encodedWitnesses,
       this._protocolParams.languageView
@@ -282,7 +350,14 @@ export class Transaction {
   }
 
   buildTransaction(): { hash: string; payload: string } {
-    const encodedWitnesses = encodeWitnesses(this.witnesses, this.inputs, this.plutusDataList);
+    const encodedWitnesses = encodeWitnesses(
+      this.witnesses,
+      this.inputs,
+      this.plutusDataList,
+      this.plutusScriptMap,
+      this.nativeScriptList,
+      this.mints
+    );
     const scriptDataHash = generateScriptDataHash(
       encodedWitnesses,
       this._protocolParams.languageView
@@ -313,6 +388,38 @@ export class Transaction {
     return this.certificates;
   }
 
+  getMintTokens(): Array<Token> {
+    const tokens = [];
+    for (const mint of this.mints) {
+      for (const asset of mint.assets) {
+        if (asset.amount.isPositive()) {
+          tokens.push({
+            policyId: mint.policyId,
+            assetName: asset.assetName,
+            amount: asset.amount,
+          });
+        }
+      }
+    }
+    return tokens;
+  }
+
+  getBurnTokens(): Array<Token> {
+    const tokens = [];
+    for (const mint of this.mints) {
+      for (const asset of mint.assets) {
+        if (asset.amount.isNegative()) {
+          tokens.push({
+            policyId: mint.policyId,
+            assetName: asset.assetName,
+            amount: asset.amount.abs(),
+          });
+        }
+      }
+    }
+    return tokens;
+  }
+
   getInputAmount(): { ada: BigNumber; tokens: Array<Token> } {
     let inputTokens: Array<Token> = [];
     let ada = new BigNumber(0);
@@ -321,6 +428,8 @@ export class Transaction {
       inputTokens = inputTokens.concat(input.tokens);
       ada = ada.plus(input.amount);
     });
+
+    inputTokens = _.concat(inputTokens, this.getMintTokens());
 
     return {
       ada,
@@ -348,6 +457,8 @@ export class Transaction {
       outputTokens = outputTokens.concat(output.tokens);
       ada = ada.plus(output.amount);
     });
+
+    outputTokens = _.concat(outputTokens, this.getBurnTokens());
 
     return {
       ada,
@@ -397,6 +508,10 @@ export class Transaction {
 
   getRequiredWitnesses(): Map<string, BipPath | undefined> {
     return this.requiredWitnesses;
+  }
+
+  getRequiredNativeScriptWitnesses(): Map<string, undefined> {
+    return this.requiredNativeScriptWitnesses;
   }
 
   getRequiredSigners(): Map<string, BipPath | undefined> {

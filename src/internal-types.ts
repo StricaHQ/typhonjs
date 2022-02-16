@@ -1,7 +1,16 @@
+/* eslint-disable no-use-before-define */
 import { Buffer } from "buffer";
 import { CborTag } from "@stricahq/cbors";
 import BigNumber from "bignumber.js";
 import { CertificateType, HashType, WitnessType } from "./types";
+
+export type TokenBundle = Record<
+  string, // this is policy id
+  Array<{
+    assetName: string;
+    amount: BigNumber;
+  }>
+>;
 
 export enum RedeemerTag {
   SPEND = 0,
@@ -48,6 +57,25 @@ export type EncodedPlutusData =
 export type EncodedRedeemer = [number, number, EncodedPlutusData, EncodedExUnits];
 
 export type EncodedWitnesses = Map<WitnessType.V_KEY_WITNESS, Array<EncodedVKeyWitness>> &
+  Map<WitnessType.NATIVE_SCRIPT, Array<EncodedNativeScript>> &
   Map<WitnessType.PLUTUS_SCRIPT, Array<EncodedPlutusScript>> &
   Map<WitnessType.PLUTUS_DATA, Array<EncodedPlutusData>> &
   Map<WitnessType.REDEEMER, Array<EncodedRedeemer>>;
+
+// NativeScript types
+type NativeScriptPubKeyHash = [0, Buffer];
+type NativeScriptAll = [1, Array<EncodedNativeScript>];
+type NativeScriptAny = [2, Array<EncodedNativeScript>];
+type NativeScriptNOfK = [3, number, Array<EncodedNativeScript>];
+type NativeScriptInvalidBefore = [4, number];
+type NativeScriptInvalidAfter = [5, number];
+
+export type EncodedNativeScript =
+  | NativeScriptPubKeyHash
+  | NativeScriptAll
+  | NativeScriptAny
+  | NativeScriptNOfK
+  | NativeScriptInvalidBefore
+  | NativeScriptInvalidAfter;
+
+// NativeScript types end
