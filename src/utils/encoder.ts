@@ -190,7 +190,7 @@ export const encodeVKeyWitness = (vKeyWitness: Array<VKeyWitness>): Array<Encode
 export const encodeWitnesses = (
   vKeyWitness: Array<VKeyWitness>,
   inputs: Array<Input>,
-  plutusDataList: Array<PlutusDataConstructor>,
+  plutusDataList: Array<PlutusData>,
   plutusScriptMap: Map<string, PlutusScriptType>,
   nativeScripts: Array<NativeScript>,
   mints: Array<Mint>
@@ -293,72 +293,64 @@ export const encodeAuxiliaryData = (auxiliaryData: AuxiliaryData): cbors.CborTag
 };
 
 const PlutusDataObjectKeys = ["constructor", "fields"];
-export const encodePlutusData = (plutusData: PlutusDataConstructor): EncodedPlutusData => {
-  const createConstructor = (pConstructor: PlutusDataConstructor) => {
-    const keys = Object.keys(pConstructor);
-    if (
-      !(
-        keys.every((val) => PlutusDataObjectKeys.includes(val)) &&
-        pConstructor.fields instanceof Array
-      )
-    ) {
-      throw new Error("Invalid PlutusData supplied");
-    }
-    // array is definite length if empty
-    let fields: Array<unknown> = [];
-    if (pConstructor.fields.length > 0) {
-      fields = new cbors.IndefiniteArray();
-      for (const field of pConstructor.fields) {
-        fields.push(encodePlutusDataTypes(field));
-      }
-    }
-    if (pConstructor.constructor < 7) {
-      return new cbors.CborTag(fields, 121 + pConstructor.constructor);
-    }
-    if (pConstructor.constructor > 6 && pConstructor.constructor < 128) {
-      const mask = pConstructor.constructor - 7;
-      return new cbors.CborTag(fields, 1280 + mask);
-    }
-    return new cbors.CborTag([pConstructor.constructor, fields], 102);
-  };
-  const encodePlutusDataTypes = (subPlutusData: PlutusData): unknown => {
-    if (subPlutusData instanceof Array) {
-      const ary = [];
-      for (const d of subPlutusData) {
-        ary.push(encodePlutusDataTypes(d));
-      }
-      return ary;
-    }
-    if (subPlutusData instanceof Uint8Array) {
-      return Buffer.from(subPlutusData);
-    }
-    if (subPlutusData instanceof Buffer) {
-      return subPlutusData;
-    }
-    if (typeof subPlutusData === "string") {
-      throw new Error("String not supported in PlutusData");
-    }
-    // TODO: map is also an object, check map first, maybe requires a proper fix
-    else if (subPlutusData instanceof Map) {
-      const map = new Map();
-      for (const [key, value] of subPlutusData.entries()) {
-        map.set(key, encodePlutusDataTypes(value));
-      }
-      return map;
-    } else if (subPlutusData instanceof Object) {
-      const constructorObject = subPlutusData as PlutusDataConstructor;
-      const constructor = createConstructor(constructorObject);
-      return constructor;
-    } else {
-      return subPlutusData;
-    }
-  };
-
-  if (plutusData instanceof Object) {
-    const constructor = createConstructor(plutusData);
-    return constructor;
+const createConstructor = (pConstructor: PlutusDataConstructor) => {
+  const keys = Object.keys(pConstructor);
+  if (
+    !(
+      keys.every((val) => PlutusDataObjectKeys.includes(val)) &&
+      pConstructor.fields instanceof Array
+    )
+  ) {
+    throw new Error("Invalid PlutusData supplied");
   }
-  throw new Error("Invalid PlutusData supplied");
+  // array is definite length if empty
+  let fields: Array<unknown> = [];
+  if (pConstructor.fields.length > 0) {
+    fields = new cbors.IndefiniteArray();
+    for (const field of pConstructor.fields) {
+      fields.push(encodePlutusData(field));
+    }
+  }
+  if (pConstructor.constructor < 7) {
+    return new cbors.CborTag(fields, 121 + pConstructor.constructor);
+  }
+  if (pConstructor.constructor > 6 && pConstructor.constructor < 128) {
+    const mask = pConstructor.constructor - 7;
+    return new cbors.CborTag(fields, 1280 + mask);
+  }
+  return new cbors.CborTag([pConstructor.constructor, fields], 102);
+};
+export const encodePlutusData = (plutusData: PlutusData): EncodedPlutusData => {
+  if (plutusData instanceof Array) {
+    const ary = [];
+    for (const d of plutusData) {
+      ary.push(encodePlutusData(d));
+    }
+    return ary;
+  }
+  if (plutusData instanceof Uint8Array) {
+    return Buffer.from(plutusData);
+  }
+  if (plutusData instanceof Buffer) {
+    return plutusData;
+  }
+  if (typeof plutusData === "string") {
+    throw new Error("String not supported in PlutusData");
+  }
+  // TODO: map is also an object, check map first, maybe requires a proper fix
+  else if (plutusData instanceof Map) {
+    const map = new Map();
+    for (const [key, value] of plutusData.entries()) {
+      map.set(key, encodePlutusData(value));
+    }
+    return map;
+  } else if (plutusData instanceof Object) {
+    const constructorObject = plutusData as PlutusDataConstructor;
+    const constructor = createConstructor(constructorObject);
+    return constructor;
+  } else {
+    return plutusData;
+  }
 };
 
 export const encodeLanguageViews = (
