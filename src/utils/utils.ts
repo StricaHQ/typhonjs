@@ -14,7 +14,6 @@ import {
   NetworkId,
   ShelleyAddress,
   Token,
-  TokenBundle,
   Credential,
   HashType,
   CardanoAddress,
@@ -23,6 +22,7 @@ import {
 } from "../types";
 import RewardAddress from "../address/RewardAddress";
 import { encodeAuxiliaryData, encodePlutusData } from "./encoder";
+import { TokenBundle } from "../internal-types";
 
 export const calculateMinUtxoAmount = (
   tokens: Array<Token>,

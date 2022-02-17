@@ -265,9 +265,23 @@ export const receiverAddress = utils.getAddressFromBech32(
 
 export const UTXOs: Array<Input> = [
   {
-    txId: "d771da555feac5b6376652b284c20b39f7b5aef8ea8e03c927f7f731fed13310",
+    txId: "d771da555feac5b6376652b284c20b39f7b5aef8ea8e03c927f7f731fed13314",
     index: 0,
-    amount: new BigNumber(10000000),
+    amount: new BigNumber(50000000),
+    tokens: [],
+    address: address2,
+  },
+  {
+    txId: "d771da555feac5b6376652b284c20b39f7b5aef8ea8e03c927f7f731fed13313",
+    index: 0,
+    amount: new BigNumber(40000000),
+    tokens: tokens,
+    address: address2,
+  },
+  {
+    txId: "d771da555feac5b6376652b284c20b39f7b5aef8ea8e03c927f7f731fed13312",
+    index: 0,
+    amount: new BigNumber(30000000),
     tokens: [],
     address: address1,
   },
@@ -279,24 +293,10 @@ export const UTXOs: Array<Input> = [
     address: address1,
   },
   {
-    txId: "d771da555feac5b6376652b284c20b39f7b5aef8ea8e03c927f7f731fed13312",
+    txId: "d771da555feac5b6376652b284c20b39f7b5aef8ea8e03c927f7f731fed13310",
     index: 0,
-    amount: new BigNumber(30000000),
+    amount: new BigNumber(10000000),
     tokens: [],
     address: address1,
-  },
-  {
-    txId: "d771da555feac5b6376652b284c20b39f7b5aef8ea8e03c927f7f731fed13313",
-    index: 0,
-    amount: new BigNumber(40000000),
-    tokens: tokens,
-    address: address2,
-  },
-  {
-    txId: "d771da555feac5b6376652b284c20b39f7b5aef8ea8e03c927f7f731fed13314",
-    index: 0,
-    amount: new BigNumber(50000000),
-    tokens: [],
-    address: address2,
   },
 ];

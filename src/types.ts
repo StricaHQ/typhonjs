@@ -35,13 +35,48 @@ export type HashCredential = {
   bipPath?: BipPath;
 };
 
+type NativeScriptPubKeyHash = {
+  pubKeyHash: string;
+};
+
+type NativeScriptAll = {
+  all: Array<NativeScript>;
+};
+
+type NativeScriptAny = {
+  any: Array<NativeScript>;
+};
+
+type NativeScriptNOfK = {
+  n: number;
+  k: Array<NativeScript>;
+};
+
+type NativeScriptInvalidBefore = {
+  invalidBefore: number;
+};
+
+type NativeScriptInvalidAfter = {
+  invalidAfter: number;
+};
+
+export type NativeScript =
+  | NativeScriptPubKeyHash
+  | NativeScriptNOfK
+  | NativeScriptInvalidBefore
+  | NativeScriptInvalidAfter
+  | NativeScriptAll
+  | NativeScriptAny;
+
+export type PlutusScript = {
+  cborHex: string;
+  type: PlutusScriptType;
+};
+
 export type ScriptCredential = {
   hash: string;
   type: HashType.SCRIPT;
-  plutusScript?: {
-    cborHex: string;
-    type: PlutusScriptType;
-  };
+  plutusScript?: PlutusScript;
   // TODO: nativeScript?: TYPE
 };
 
@@ -55,6 +90,7 @@ export enum CertificateType {
 
 export enum WitnessType {
   V_KEY_WITNESS = 0,
+  NATIVE_SCRIPT = 1,
   PLUTUS_SCRIPT = 3,
   PLUTUS_DATA = 4,
   REDEEMER = 5,
@@ -74,6 +110,7 @@ export enum TransactionBodyItemType {
   WITHDRAWALS = 5,
   AUXILIARY_DATA_HASH = 7,
   VALIDITY_INTERVAL_START = 8,
+  MINT = 9,
   SCRIPT_DATA_HASH = 11,
   COLLATERAL_INPUTS = 13,
   REQUIRED_SIGNERS = 14,
@@ -85,14 +122,6 @@ export type Token = {
   amount: BigNumber;
 };
 
-export type TokenBundle = Record<
-  string, // this is policy id
-  Array<{
-    assetName: string;
-    amount: BigNumber;
-  }>
->;
-
 export type Input = {
   txId: string;
   index: number;
@@ -100,6 +129,19 @@ export type Input = {
   tokens: Array<Token>;
   address: ShelleyAddress;
   plutusData?: PlutusDataConstructor;
+  redeemer?: Redeemer;
+};
+
+export type Asset = {
+  assetName: string;
+  amount: BigNumber;
+};
+
+export type Mint = {
+  policyId: string;
+  assets: Array<Asset>;
+  nativeScript?: NativeScript;
+  plutusScript?: PlutusScript;
   redeemer?: Redeemer;
 };
 

@@ -50,12 +50,7 @@ export function transactionBuilder({
     new BigNumber(transaction.protocolParams.lovelacePerUtxoWord)
   );
 
-  const utxoInputs = _.cloneDeep(inputs).sort((a, b) => {
-    const diff = new BigNumber(a.amount).minus(b.amount);
-    if (diff.gt(0)) return -1;
-    if (diff.lt(0)) return 1;
-    return 0;
-  });
+  const utxoInputs = _.cloneDeep(inputs);
 
   // Add Inputs
   // there needs to be min one input, add that first
@@ -190,8 +185,8 @@ export function transactionBuilder({
       verifyCollateral(feeWithoutChange);
     } else if (currentInput.gt(outputWithFee)) {
       const changeADA = currentInput.minus(currentOutput);
-      // not equal to, as there will be a fee above minUtxo
-      if (changeADA.gt(minUtxo)) {
+      // not equal to, as there will be a a slightly higher fee with new change
+      if (changeADA.gt(minUtxo.plus(feeWithoutChange))) {
         const feeWithChange = transaction.calculateFee([
           {
             address: changeAddress,
