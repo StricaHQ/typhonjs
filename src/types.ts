@@ -35,28 +35,28 @@ export type HashCredential = {
   bipPath?: BipPath;
 };
 
-type NativeScriptPubKeyHash = {
+export type NativeScriptPubKeyHash = {
   pubKeyHash: string;
 };
 
-type NativeScriptAll = {
+export type NativeScriptAll = {
   all: Array<NativeScript>;
 };
 
-type NativeScriptAny = {
+export type NativeScriptAny = {
   any: Array<NativeScript>;
 };
 
-type NativeScriptNOfK = {
+export type NativeScriptNOfK = {
   n: number;
   k: Array<NativeScript>;
 };
 
-type NativeScriptInvalidBefore = {
+export type NativeScriptInvalidBefore = {
   invalidBefore: number;
 };
 
-type NativeScriptInvalidAfter = {
+export type NativeScriptInvalidAfter = {
   invalidAfter: number;
 };
 
