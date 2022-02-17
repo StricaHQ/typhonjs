@@ -18,7 +18,7 @@ import {
   HashType,
   Mint,
   NativeScript,
-  PlutusDataConstructor,
+  PlutusData,
   PlutusScriptType,
   ProtocolParams,
   TransactionBodyItemType,
@@ -65,7 +65,7 @@ export class Transaction {
   protected auxiliaryData: AuxiliaryData | undefined = undefined;
   protected collaterals: Array<CollateralInput> = [];
   protected requiredSigners: Map<string, BipPath | undefined> = new Map();
-  protected plutusDataList: Array<PlutusDataConstructor> = [];
+  protected plutusDataList: Array<PlutusData> = [];
   protected _isPlutusTransaction = false;
   protected mints: Array<Mint> = [];
 

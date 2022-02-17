@@ -128,7 +128,7 @@ export type Input = {
   amount: BigNumber;
   tokens: Array<Token>;
   address: ShelleyAddress;
-  plutusData?: PlutusDataConstructor;
+  plutusData?: PlutusData;
   redeemer?: Redeemer;
 };
 
@@ -156,7 +156,7 @@ export type Output = {
   amount: BigNumber;
   address: CardanoAddress;
   tokens: Array<Token>;
-  plutusData?: PlutusDataConstructor;
+  plutusData?: PlutusData;
   plutusDataHash?: string;
 };
 
@@ -223,7 +223,7 @@ export type ExUnits = {
 };
 
 export type Redeemer = {
-  plutusData: PlutusDataConstructor;
+  plutusData: PlutusData;
   exUnits: ExUnits;
 };
 

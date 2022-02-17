@@ -17,8 +17,8 @@ import {
   Credential,
   HashType,
   CardanoAddress,
-  PlutusDataConstructor,
   AuxiliaryData,
+  PlutusData,
 } from "../types";
 import RewardAddress from "../address/RewardAddress";
 import { encodeAuxiliaryData, encodePlutusData } from "./encoder";
@@ -223,7 +223,7 @@ export const createAuxiliaryDataCbor = (auxiliaryData: AuxiliaryData): Buffer =>
   return cbors.Encoder.encode(encodedAuxData);
 };
 
-export const createPlutusDataCbor = (plutusData: PlutusDataConstructor): Buffer => {
+export const createPlutusDataCbor = (plutusData: PlutusData): Buffer => {
   const encodedPlutusData = encodePlutusData(plutusData);
   return cbors.Encoder.encode(encodedPlutusData);
 };
