@@ -405,7 +405,7 @@ export const encodeNativeScript = (nativeScript: any): EncodedNativeScript => {
     return [4, nativeScript.invalidBefore];
   }
   if (nativeScript.invalidAfter) {
-    return [4, nativeScript.invalidAfter];
+    return [5, nativeScript.invalidAfter];
   }
   throw new Error("Invalid native script");
 };
