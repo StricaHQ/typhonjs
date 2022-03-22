@@ -322,11 +322,14 @@ const createConstructor = (pConstructor: PlutusDataConstructor) => {
 };
 export const encodePlutusData = (plutusData: PlutusData): EncodedPlutusData => {
   if (plutusData instanceof Array) {
-    const ary = [];
-    for (const d of plutusData) {
-      ary.push(encodePlutusData(d));
+    if (plutusData.length > 0) {
+      const ary = new cbors.IndefiniteArray();
+      for (const d of plutusData) {
+        ary.push(encodePlutusData(d));
+      }
+      return ary;
     }
-    return ary;
+    return [];
   }
   if (plutusData instanceof Uint8Array) {
     return Buffer.from(plutusData);
@@ -339,11 +342,14 @@ export const encodePlutusData = (plutusData: PlutusData): EncodedPlutusData => {
   }
   // TODO: map is also an object, check map first, maybe requires a proper fix
   else if (plutusData instanceof Map) {
-    const map = new Map();
-    for (const [key, value] of plutusData.entries()) {
-      map.set(key, encodePlutusData(value));
+    if (plutusData.size > 0) {
+      const map = new cbors.IndefiniteMap();
+      for (const [key, value] of plutusData.entries()) {
+        map.set(key, encodePlutusData(value));
+      }
+      return map;
     }
-    return map;
+    return new Map();
   } else if (plutusData instanceof Object) {
     const constructorObject = plutusData as PlutusDataConstructor;
     const constructor = createConstructor(constructorObject);
