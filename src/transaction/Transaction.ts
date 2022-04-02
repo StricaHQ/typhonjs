@@ -40,6 +40,7 @@ import {
   encodeInputs,
   encodeMint,
   encodeOutputs,
+  encodePlutusData,
   encodeWithdrawals,
   encodeWitnesses,
 } from "../utils/encoder";
@@ -158,6 +159,10 @@ export class Transaction {
   addOutput(output: Output): void {
     const uOutput = output;
     uOutput.tokens = sortTokens(uOutput.tokens);
+    if (uOutput.plutusData) {
+      const encodedPlutusData = cbors.Encoder.encode(encodePlutusData(uOutput.plutusData));
+      uOutput.plutusDataHash = hash32(encodedPlutusData).toString("hex");
+    }
     this.outputs.push(uOutput);
     if (uOutput.plutusData) {
       this.plutusDataList.push(uOutput.plutusData);
@@ -202,6 +207,9 @@ export class Transaction {
       const auxiliaryDataHash = hash32(auxiliaryDataCbor);
       encodedBody.set(TransactionBodyItemType.AUXILIARY_DATA_HASH, auxiliaryDataHash);
     }
+    if (!_.isEmpty(this.mints)) {
+      encodedBody.set(TransactionBodyItemType.MINT, encodeMint(this.mints));
+    }
     if (scriptDataHash) {
       encodedBody.set(TransactionBodyItemType.SCRIPT_DATA_HASH, scriptDataHash);
     }
@@ -217,9 +225,6 @@ export class Transaction {
         TransactionBodyItemType.REQUIRED_SIGNERS,
         requiredSigners.map((key) => Buffer.from(key, "hex"))
       );
-    }
-    if (!_.isEmpty(this.mints)) {
-      encodedBody.set(TransactionBodyItemType.MINT, encodeMint(this.mints));
     }
 
     return encodedBody;
@@ -256,8 +261,10 @@ export class Transaction {
   }
 
   calculateFee(extraOutputs?: Array<Output>): BigNumber {
-    const combinedRequiredWitnesses: Map<string, BipPath | undefined> =
-      this.requiredNativeScriptWitnesses;
+    const combinedRequiredWitnesses: Map<string, BipPath | undefined> = new Map();
+    for (const [key, value] of this.requiredNativeScriptWitnesses.entries()) {
+      combinedRequiredWitnesses.set(key, value);
+    }
     for (const [key, value] of this.requiredSigners.entries()) {
       combinedRequiredWitnesses.set(key, value);
     }
@@ -435,6 +442,27 @@ export class Transaction {
       ada,
       tokens: getUniqueTokens(inputTokens),
     };
+  }
+
+  getCollaterals(): Array<CollateralInput> {
+    return this.collaterals;
+  }
+
+  getScriptIntegrityHash(): Buffer | undefined {
+    const encodedWitnesses = encodeWitnesses(
+      this.witnesses,
+      this.inputs,
+      this.plutusDataList,
+      this.plutusScriptMap,
+      this.nativeScriptList,
+      this.mints
+    );
+    const scriptDataHash = generateScriptDataHash(
+      encodedWitnesses,
+      this._protocolParams.languageView
+    );
+
+    return scriptDataHash;
   }
 
   getCollateralAmount(): BigNumber {

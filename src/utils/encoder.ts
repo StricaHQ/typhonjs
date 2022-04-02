@@ -103,13 +103,9 @@ export const encodeOutputs = (outputs: Array<Output>): Array<EncodedOutput> => {
       output.tokens.length > 0 ? [output.amount, encodeOutputTokens(output.tokens)] : output.amount;
 
     const result: EncodedOutput = [output.address.getBytes(), amount];
-    let plutusDataHash = output.plutusDataHash
+    const plutusDataHash = output.plutusDataHash
       ? Buffer.from(output.plutusDataHash, "hex")
       : undefined;
-    if (output.plutusData) {
-      const encodedPlutusData = cbors.Encoder.encode(encodePlutusData(output.plutusData));
-      plutusDataHash = hash32(encodedPlutusData);
-    }
     if (plutusDataHash) {
       result.push(plutusDataHash);
     }
