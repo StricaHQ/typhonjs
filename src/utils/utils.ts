@@ -12,7 +12,6 @@ import PointerAddress from "../address/PointerAddress";
 import { getUniqueTokens } from "./helpers";
 import {
   NetworkId,
-  ShelleyAddress,
   Token,
   Credential,
   HashType,
@@ -76,7 +75,7 @@ export const calculateMinUtxoAmount = (
   return BigNumber.max(minUtxo, minUtxoWithTokens);
 };
 
-export const getAddressFromHex = (hexAddress: string): ShelleyAddress | RewardAddress => {
+export const getAddressFromHex = (hexAddress: string): CardanoAddress => {
   const typeHex = hexAddress.toLowerCase().charAt(0);
   const networkId = Number(hexAddress.toLowerCase().charAt(1)) as NetworkId;
   let stakeCredential: Credential;
@@ -164,6 +163,8 @@ export const getAddressFromHex = (hexAddress: string): ShelleyAddress | RewardAd
         type: HashType.ADDRESS,
       };
       return new BaseAddress(networkId, paymentCredential, stakeCredential);
+    case "8":
+      return new ByronAddress(Buffer.from(hexAddress, "hex"));
     default:
       throw new Error("Unsupported address type");
   }
