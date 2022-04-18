@@ -192,7 +192,9 @@ export const encodeWitnesses = (
   mints: Array<Mint>
 ): EncodedWitnesses => {
   const encodedWitnesses: EncodedWitnesses = new Map();
-  encodedWitnesses.set(WitnessType.V_KEY_WITNESS, encodeVKeyWitness(vKeyWitness));
+  if (vKeyWitness.length > 0) {
+    encodedWitnesses.set(WitnessType.V_KEY_WITNESS, encodeVKeyWitness(vKeyWitness));
+  }
 
   const sortedInputs = _.orderBy(inputs, ["txId", "index"], ["asc", "asc"]);
   const sortedMints = _.orderBy(mints, ["policyId"], ["asc"]);
