@@ -194,7 +194,9 @@ export class Transaction {
     }
     encodedBody.set(TransactionBodyItemType.OUTPUTS, encodeOutputs(trxOutputs));
     encodedBody.set(TransactionBodyItemType.FEE, this.fee);
-    encodedBody.set(TransactionBodyItemType.TTL, this.ttl);
+    if (this.ttl !== undefined) {
+      encodedBody.set(TransactionBodyItemType.TTL, this.ttl);
+    }
     if (this.certificates.length > 0) {
       encodedBody.set(TransactionBodyItemType.CERTIFICATES, encodeCertificates(this.certificates));
     }
@@ -393,6 +395,27 @@ export class Transaction {
 
   getCertificates(): Array<Certificate> {
     return this.certificates;
+  }
+
+  getMints(): Array<Mint> {
+    const tokens: Array<Token> = [];
+    for (const mint of this.mints) {
+      for (const asset of mint.assets) {
+        tokens.push({
+          policyId: mint.policyId,
+          assetName: asset.assetName,
+          amount: asset.amount,
+        });
+      }
+    }
+    const sortedTokens = sortTokens(tokens);
+    return _(sortedTokens)
+      .groupBy((token) => token.policyId)
+      .map((tokens, policyId) => ({
+        policyId,
+        assets: tokens.map((t) => ({ assetName: t.assetName, amount: t.amount })),
+      }))
+      .value();
   }
 
   getMintTokens(): Array<Token> {
