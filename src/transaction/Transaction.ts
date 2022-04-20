@@ -395,6 +395,27 @@ export class Transaction {
     return this.certificates;
   }
 
+  getMints(): Array<Mint> {
+    const tokens: Array<Token> = [];
+    for (const mint of this.mints) {
+      for (const asset of mint.assets) {
+        tokens.push({
+          policyId: mint.policyId,
+          assetName: asset.assetName,
+          amount: asset.amount,
+        });
+      }
+    }
+    const sortedTokens = sortTokens(tokens);
+    return _(sortedTokens)
+      .groupBy((token) => token.policyId)
+      .map((tokens, policyId) => ({
+        policyId,
+        assets: tokens.map((t) => ({ assetName: t.assetName, amount: t.amount })),
+      }))
+      .value();
+  }
+
   getMintTokens(): Array<Token> {
     const tokens = [];
     for (const mint of this.mints) {
