@@ -194,7 +194,9 @@ export class Transaction {
     }
     encodedBody.set(TransactionBodyItemType.OUTPUTS, encodeOutputs(trxOutputs));
     encodedBody.set(TransactionBodyItemType.FEE, this.fee);
-    encodedBody.set(TransactionBodyItemType.TTL, this.ttl);
+    if (this.ttl !== undefined) {
+      encodedBody.set(TransactionBodyItemType.TTL, this.ttl);
+    }
     if (this.certificates.length > 0) {
       encodedBody.set(TransactionBodyItemType.CERTIFICATES, encodeCertificates(this.certificates));
     }
