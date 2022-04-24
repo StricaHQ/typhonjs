@@ -77,7 +77,7 @@ export type ScriptCredential = {
   hash: string;
   type: HashType.SCRIPT;
   plutusScript?: PlutusScript;
-  // TODO: nativeScript?: TYPE
+  nativeScript?: NativeScript;
 };
 
 export type Credential = HashCredential | ScriptCredential;

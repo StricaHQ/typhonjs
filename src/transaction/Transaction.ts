@@ -108,6 +108,13 @@ export class Transaction {
           input.address.paymentCredential.plutusScript.cborHex,
           input.address.paymentCredential.plutusScript.type
         );
+      } else if (input.address.paymentCredential.nativeScript) {
+        const nativeScript = input.address.paymentCredential.nativeScript;
+        const pubKeyHashList = getPubKeyHashListFromNativeScript(nativeScript);
+        for (const pkh of pubKeyHashList) {
+          this.requiredNativeScriptWitnesses.set(pkh, undefined);
+        }
+        this.nativeScriptList.push(nativeScript);
       }
     }
     if (input.plutusData) {
