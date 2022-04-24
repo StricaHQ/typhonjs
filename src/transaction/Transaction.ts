@@ -69,6 +69,7 @@ export class Transaction {
   protected plutusDataList: Array<PlutusData> = [];
   protected _isPlutusTransaction = false;
   protected mints: Array<Mint> = [];
+  protected validityIntervalStart: number | undefined = undefined;
 
   constructor({ protocolParams }: { protocolParams: ProtocolParams }) {
     this._protocolParams = protocolParams;
@@ -84,6 +85,14 @@ export class Transaction {
 
   setTTL(ttl: number): void {
     this.ttl = ttl;
+  }
+
+  getValidityIntervalStart(): number | undefined {
+    return this.validityIntervalStart;
+  }
+
+  setValidityIntervalStart(validityIntervalStart: number): void {
+    this.validityIntervalStart = validityIntervalStart;
   }
 
   addInput(input: Input): void {
@@ -196,6 +205,9 @@ export class Transaction {
     encodedBody.set(TransactionBodyItemType.FEE, this.fee);
     if (this.ttl !== undefined) {
       encodedBody.set(TransactionBodyItemType.TTL, this.ttl);
+    }
+    if (this.validityIntervalStart !== undefined) {
+      encodedBody.set(TransactionBodyItemType.VALIDITY_INTERVAL_START, this.validityIntervalStart);
     }
     if (this.certificates.length > 0) {
       encodedBody.set(TransactionBodyItemType.CERTIFICATES, encodeCertificates(this.certificates));
