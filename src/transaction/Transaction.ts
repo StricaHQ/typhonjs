@@ -59,16 +59,17 @@ export class Transaction {
   protected requiredWitnesses: Map<string, BipPath | undefined> = new Map();
   protected requiredNativeScriptWitnesses: Map<string, undefined> = new Map();
   protected fee: BigNumber = new BigNumber(5000000);
-  protected ttl: number | undefined = undefined;
+  protected ttl: number | undefined;
   protected witnesses: Array<VKeyWitness> = [];
   protected plutusScriptMap: Map<string, PlutusScriptType> = new Map();
   protected nativeScriptList: Array<NativeScript> = [];
-  protected auxiliaryData: AuxiliaryData | undefined = undefined;
+  protected auxiliaryData: AuxiliaryData | undefined;
   protected collaterals: Array<CollateralInput> = [];
   protected requiredSigners: Map<string, BipPath | undefined> = new Map();
   protected plutusDataList: Array<PlutusData> = [];
   protected _isPlutusTransaction = false;
   protected mints: Array<Mint> = [];
+  protected validityIntervalStart: number | undefined;
 
   constructor({ protocolParams }: { protocolParams: ProtocolParams }) {
     this._protocolParams = protocolParams;
@@ -86,6 +87,14 @@ export class Transaction {
     this.ttl = ttl;
   }
 
+  getValidityIntervalStart(): number | undefined {
+    return this.validityIntervalStart;
+  }
+
+  setValidityIntervalStart(validityIntervalStart: number): void {
+    this.validityIntervalStart = validityIntervalStart;
+  }
+
   addInput(input: Input): void {
     if (input.address.paymentCredential.type === HashType.ADDRESS) {
       this.requiredWitnesses.set(
@@ -99,6 +108,13 @@ export class Transaction {
           input.address.paymentCredential.plutusScript.cborHex,
           input.address.paymentCredential.plutusScript.type
         );
+      } else if (input.address.paymentCredential.nativeScript) {
+        const nativeScript = input.address.paymentCredential.nativeScript;
+        const pubKeyHashList = getPubKeyHashListFromNativeScript(nativeScript);
+        for (const pkh of pubKeyHashList) {
+          this.requiredNativeScriptWitnesses.set(pkh, undefined);
+        }
+        this.nativeScriptList.push(nativeScript);
       }
     }
     if (input.plutusData) {
@@ -196,6 +212,9 @@ export class Transaction {
     encodedBody.set(TransactionBodyItemType.FEE, this.fee);
     if (this.ttl !== undefined) {
       encodedBody.set(TransactionBodyItemType.TTL, this.ttl);
+    }
+    if (this.validityIntervalStart !== undefined) {
+      encodedBody.set(TransactionBodyItemType.VALIDITY_INTERVAL_START, this.validityIntervalStart);
     }
     if (this.certificates.length > 0) {
       encodedBody.set(TransactionBodyItemType.CERTIFICATES, encodeCertificates(this.certificates));
