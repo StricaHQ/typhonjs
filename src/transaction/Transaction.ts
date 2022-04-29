@@ -59,17 +59,17 @@ export class Transaction {
   protected requiredWitnesses: Map<string, BipPath | undefined> = new Map();
   protected requiredNativeScriptWitnesses: Map<string, undefined> = new Map();
   protected fee: BigNumber = new BigNumber(5000000);
-  protected ttl: number | undefined = undefined;
+  protected ttl: number | undefined;
   protected witnesses: Array<VKeyWitness> = [];
   protected plutusScriptMap: Map<string, PlutusScriptType> = new Map();
   protected nativeScriptList: Array<NativeScript> = [];
-  protected auxiliaryData: AuxiliaryData | undefined = undefined;
+  protected auxiliaryData: AuxiliaryData | undefined;
   protected collaterals: Array<CollateralInput> = [];
   protected requiredSigners: Map<string, BipPath | undefined> = new Map();
   protected plutusDataList: Array<PlutusData> = [];
   protected _isPlutusTransaction = false;
   protected mints: Array<Mint> = [];
-  protected validityIntervalStart: number | undefined = undefined;
+  protected validityIntervalStart: number | undefined;
 
   constructor({ protocolParams }: { protocolParams: ProtocolParams }) {
     this._protocolParams = protocolParams;
