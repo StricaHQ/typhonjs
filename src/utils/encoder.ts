@@ -348,6 +348,8 @@ export const encodePlutusData = (plutusData: PlutusData): EncodedPlutusData => {
       return map;
     }
     return new Map();
+  } else if (BigNumber.isBigNumber(plutusData)) {
+    return plutusData;
   } else if (plutusData instanceof Object) {
     const constructorObject = plutusData as PlutusDataConstructor;
     const constructor = createConstructor(constructorObject);
