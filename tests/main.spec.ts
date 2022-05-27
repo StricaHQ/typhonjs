@@ -1,6 +1,13 @@
 import BigNumber from "bignumber.js";
 import { expect } from "chai";
-import { utils, address as CardanoAddress, Transaction, types } from "../src/index";
+import {
+  utils,
+  address as CardanoAddress,
+  Transaction,
+  types,
+  PlutusDataFactory,
+} from "../src/index";
+import { PlutusData } from "../src/types";
 import * as stub from "./stub";
 
 describe("Typhonjs", (): void => {
@@ -72,6 +79,12 @@ describe("Typhonjs", (): void => {
       };
       const plutusDataCbor = utils.createPlutusDataCbor(plutusData).toString("hex");
       expect(plutusDataCbor).to.eq("d8799f0c0cff");
+    });
+
+    it("can encode PlutusData BigNumber", () => {
+      const data: PlutusData = new BigNumber(42);
+      const cborData = new PlutusDataFactory(data).cbor().toString("hex");
+      expect(cborData).eq("182a");
     });
   });
 
