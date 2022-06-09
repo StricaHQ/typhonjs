@@ -183,6 +183,9 @@ export const decodeBech32 = (bech32Address: string): { prefix: string; value: st
 export const getAddressFromBech32 = (bech32Address: string): CardanoAddress => {
   try {
     const byronAddress = bs58.decode(bech32Address);
+    if (byronAddress[0] !== "8") {
+      throw new Error("Invalid Byron Address");
+    }
     return new ByronAddress(byronAddress);
   } catch (error) {
     try {
