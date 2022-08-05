@@ -183,14 +183,19 @@ export const decodeBech32 = (bech32Address: string): { prefix: string; value: st
 export const getAddressFromBech32 = (bech32Address: string): CardanoAddress => {
   try {
     const byronAddress = Buffer.from(bs58.decode(bech32Address));
-    if (byronAddress.toString("hex")[0] !== "8") {
+    try {
+      cbors.Decoder.decode(byronAddress);
+    } catch (e) {
       throw new Error("Invalid Byron Address");
     }
     return new ByronAddress(byronAddress);
   } catch (error) {
     try {
-      const hexAddress = decodeBech32(bech32Address).value;
-      return getAddressFromHex(hexAddress);
+      const decodeAddr = decodeBech32(bech32Address);
+      if (decodeAddr.prefix === "addr") {
+        return getAddressFromHex(decodeAddr.value);
+      }
+      throw new Error("Invalid Address");
     } catch (err) {
       throw new Error("Invalid Address");
     }
