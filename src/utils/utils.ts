@@ -192,7 +192,7 @@ export const getAddressFromBech32 = (bech32Address: string): CardanoAddress => {
   } catch (error) {
     try {
       const decodeAddr = decodeBech32(bech32Address);
-      if (decodeAddr.prefix === "addr") {
+      if (decodeAddr.prefix === "addr" || decodeAddr.prefix === "addr_test") {
         return getAddressFromHex(decodeAddr.value);
       }
       throw new Error("Invalid Address");
