@@ -25,7 +25,7 @@ import { TokenBundle } from "../internal-types";
 
 export const calculateMinUtxoAmount = (
   tokens: Array<Token>,
-  lovelacePerUtxoWord: BigNumber,
+  lovelacePerUtxoWord: number,
   hasPlutusDataHash?: boolean
 ): BigNumber => {
   const uniqueTokens = getUniqueTokens(tokens);
@@ -66,12 +66,12 @@ export const calculateMinUtxoAmount = (
   const size =
     6 + roundupBytesToWords(uniqueTokens.length * 12 + assetNameSize + policyCount * policyIdSize);
 
-  const minUtxo = lovelacePerUtxoWord.toNumber() * adaOnlyUtxoSize;
+  const minUtxo = lovelacePerUtxoWord * adaOnlyUtxoSize;
 
   if (uniqueTokens.length === 0) {
     return new BigNumber(minUtxo);
   }
-  const minUtxoWithTokens = lovelacePerUtxoWord.toNumber() * (utxoEntrySizeWithoutVal + size);
+  const minUtxoWithTokens = lovelacePerUtxoWord * (utxoEntrySizeWithoutVal + size);
   return BigNumber.max(minUtxo, minUtxoWithTokens);
 };
 

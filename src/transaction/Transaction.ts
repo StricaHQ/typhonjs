@@ -277,8 +277,8 @@ export class Transaction {
     }
 
     const memPrice = new BigNumber(totalMem).times(this._protocolParams.priceMem);
-    const stepsPrice = new BigNumber(totalSteps).times(this._protocolParams.priceSteps);
-    return memPrice.plus(stepsPrice).integerValue(BigNumber.ROUND_CEIL);
+    const stepPrice = new BigNumber(totalSteps).times(this._protocolParams.priceStep);
+    return memPrice.plus(stepPrice).integerValue(BigNumber.ROUND_CEIL);
   }
 
   calculateFee(extraOutputs?: Array<Output>): BigNumber {
@@ -541,7 +541,7 @@ export class Transaction {
       this.certificates,
       (result, cert) => {
         if (cert.certType === CertificateType.STAKE_REGISTRATION) {
-          return result.plus(this._protocolParams.stakeKeyDeposit);
+          return result.plus(this._protocolParams.keyDeposit);
         }
         return result;
       },
@@ -554,7 +554,7 @@ export class Transaction {
       this.certificates,
       (result, cert) => {
         if (cert.certType === CertificateType.STAKE_DE_REGISTRATION) {
-          return result.plus(this._protocolParams.stakeKeyDeposit);
+          return result.plus(this._protocolParams.keyDeposit);
         }
         return result;
       },

@@ -399,12 +399,13 @@ export type LanguageView = {
 };
 
 export type ProtocolParams = {
-  minFeeA: BigNumber;
-  minFeeB: BigNumber;
-  stakeKeyDeposit: BigNumber;
-  lovelacePerUtxoWord: BigNumber;
-  collateralPercent: BigNumber;
-  priceSteps: BigNumber;
-  priceMem: BigNumber;
+  minFeeA: number;
+  minFeeB: number;
+  keyDeposit: number;
+  // Deprecated, use coinsPerUtxoByte
+  lovelacePerUtxoWord: number;
+  collateralPercent: number;
+  priceStep: number;
+  priceMem: number;
   languageView: LanguageView;
 };

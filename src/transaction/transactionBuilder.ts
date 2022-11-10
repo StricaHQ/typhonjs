@@ -45,10 +45,7 @@ export function transactionBuilder({
     }
   };
 
-  const minUtxo = calculateMinUtxoAmount(
-    [],
-    new BigNumber(transaction.protocolParams.lovelacePerUtxoWord)
-  );
+  const minUtxo = calculateMinUtxoAmount([], transaction.protocolParams.lovelacePerUtxoWord);
 
   const utxoInputs = _.cloneDeep(inputs);
 
@@ -120,7 +117,7 @@ export function transactionBuilder({
       for (const [index, tokens] of tokensTokens.entries()) {
         const minUtxo = calculateMinUtxoAmount(
           tokens,
-          new BigNumber(transaction.protocolParams.lovelacePerUtxoWord)
+          transaction.protocolParams.lovelacePerUtxoWord
         );
         let outputAmount = minUtxo;
         if (index === tokensTokens.length - 1) {
@@ -216,7 +213,7 @@ export function transactionBuilder({
       tokensTokens.forEach((tokens, index) => {
         const minUtxo = calculateMinUtxoAmount(
           tokens,
-          new BigNumber(transaction.protocolParams.lovelacePerUtxoWord)
+          transaction.protocolParams.lovelacePerUtxoWord
         );
         let outputAmount = minUtxo;
         if (index === tokensTokens.length - 1) {
@@ -254,7 +251,7 @@ export function transactionBuilder({
     tokensTokens.forEach((tokens, index) => {
       const minUtxo = calculateMinUtxoAmount(
         tokens,
-        new BigNumber(transaction.protocolParams.lovelacePerUtxoWord)
+        transaction.protocolParams.lovelacePerUtxoWord
       );
       let outputAmount = minUtxo;
       if (index === tokensTokens.length - 1) {

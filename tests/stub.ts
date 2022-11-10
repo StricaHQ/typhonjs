@@ -4,13 +4,13 @@ import { BaseAddress } from "../src/address";
 import { HashCredential, HashType, Input, NetworkId } from "../src/types";
 
 export const pParams = {
-  minFeeA: new BigNumber(44),
-  minFeeB: new BigNumber(155381),
-  stakeKeyDeposit: new BigNumber(2000000),
-  lovelacePerUtxoWord: new BigNumber(34482),
-  collateralPercent: new BigNumber(150),
-  priceSteps: new BigNumber(0.0577),
-  priceMem: new BigNumber(0.0000721),
+  minFeeA: 44,
+  minFeeB: 155381,
+  keyDeposit: 2000000,
+  lovelacePerUtxoWord: 34482,
+  collateralPercent: 150,
+  priceStep: 0.0000721,
+  priceMem: 0.0577,
   languageView: {
     PlutusScriptV1: {
       "sha2_256-memory-arguments": 4,
