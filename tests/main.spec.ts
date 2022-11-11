@@ -46,7 +46,7 @@ describe("Typhonjs", (): void => {
     });
 
     it("get address from bech32", () => {
-      const address = utils.getAddressFromBech32(
+      const address = utils.getAddressFromString(
         "addr1q9dmtr22dz54qn8pgx4yhle64nhwpqjyxsueaetdcxxa7k5jhh20yrgtl00c5mqnpjm5p8aud9cqldgwf3rq8dxvgy4snhadga"
       );
       expect(address instanceof CardanoAddress.BaseAddress).to.eq(true);
@@ -91,7 +91,7 @@ describe("Typhonjs", (): void => {
   describe("address", () => {
     describe(`Enterprise Address`, () => {
       const adr = "addr1v8s64t9zghl44sewflpszrfx4jqc7mppd8hgp2ctakuqpaq3k5f9m";
-      const address = utils.getAddressFromBech32(adr) as CardanoAddress.EnterpriseAddress;
+      const address = utils.getAddressFromString(adr) as CardanoAddress.EnterpriseAddress;
       const hex = address.getHex();
       const paymentHash = address.paymentCredential.hash;
       const hashType = address.paymentCredential.type;
@@ -128,7 +128,7 @@ describe("Typhonjs", (): void => {
     describe(`Base Address`, () => {
       const adr =
         "addr1q9dmtr22dz54qn8pgx4yhle64nhwpqjyxsueaetdcxxa7k5jhh20yrgtl00c5mqnpjm5p8aud9cqldgwf3rq8dxvgy4snhadga";
-      const address = utils.getAddressFromBech32(adr) as CardanoAddress.BaseAddress;
+      const address = utils.getAddressFromString(adr) as CardanoAddress.BaseAddress;
       const hex = address.getHex();
       const paymentHash = address.paymentCredential.hash;
       const hashType = address.paymentCredential.type;
@@ -182,7 +182,7 @@ describe("Typhonjs", (): void => {
     });
     describe(`Reward Address`, () => {
       const adr = "stake1uxftm48jp59lhhu2dsfsed6qn77xjuq0k58yc3srknxyz2ct9x80q";
-      const address = utils.getAddressFromBech32(adr) as CardanoAddress.RewardAddress;
+      const address = utils.getAddressFromString(adr) as CardanoAddress.RewardAddress;
       const hex = address.getHex();
       const stakeHash = address.stakeCredential.hash;
       const stakeHashType = address.stakeCredential.type;
