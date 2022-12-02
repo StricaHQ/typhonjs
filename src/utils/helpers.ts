@@ -76,18 +76,18 @@ export const sanitizeMetadata = (metadata: unknown): unknown => {
 
 export const compareCanonically = (str1: string, str2: string): number => {
   if (str1.length !== str2.length) {
-    return str1.length - str2.length
+    return str1.length - str2.length;
   }
-  str1 = str1.toLowerCase()
-  str2 = str2.toLowerCase()
+  str1 = str1.toLowerCase();
+  str2 = str2.toLowerCase();
   if (str1 < str2) {
-    return -1
-  } else if (str1 > str2) {
-    return 1
-  } else {
-    return 0
+    return -1;
   }
-}
+  if (str1 > str2) {
+    return 1;
+  }
+  return 0;
+};
 
 export const sortTokens = (tokens: Array<Token>): Array<Token> => {
   const sortedTokens = _(tokens)

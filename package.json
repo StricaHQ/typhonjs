@@ -28,7 +28,7 @@
   "author": "Strica",
   "license": "Apache-2.0",
   "dependencies": {
-    "@stricahq/cbors": "1.0.1",
+    "@stricahq/cbors": "1.0.2",
     "bech32": "^2.0.0",
     "bignumber.js": "^9.0.1",
     "blakejs": "^1.2.1",
