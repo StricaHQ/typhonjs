@@ -281,7 +281,7 @@ export class Transaction {
     return memPrice.plus(stepsPrice).integerValue(BigNumber.ROUND_CEIL);
   }
 
-  calculateFee(extraOutputs?: Array<Output>): BigNumber {
+  calculateTxSize(extraOutputs?: Array<Output>): number {
     const combinedRequiredWitnesses: Map<string, BipPath | undefined> = new Map();
     for (const [key, value] of this.requiredNativeScriptWitnesses.entries()) {
       combinedRequiredWitnesses.set(key, value);
@@ -320,8 +320,12 @@ export class Transaction {
       this.auxiliaryData ? encodeAuxiliaryData(this.auxiliaryData) : null,
     ];
     const cborTrx = cbors.Encoder.encode(transaction) as Buffer;
+    return cborTrx.length;
+  }
 
-    const txFee = this.transactionFee(cborTrx.length);
+  calculateFee(extraOutputs?: Array<Output>): BigNumber {
+    const txSize = this.calculateTxSize(extraOutputs);
+    const txFee = this.transactionFee(txSize);
     const contractFee = this.contractFee();
     return txFee.plus(contractFee);
   }

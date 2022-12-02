@@ -97,19 +97,24 @@ export const encodeMint = (mints: Array<Mint>): EncodedTokens => {
   return policyIdMap;
 };
 
+export const encodeOutput = (output: Output): EncodedOutput => {
+  const amount: EncodedAmount =
+    output.tokens.length > 0 ? [output.amount, encodeOutputTokens(output.tokens)] : output.amount;
+
+  const encodedOutput: EncodedOutput = [output.address.getBytes(), amount];
+  const plutusDataHash = output.plutusDataHash
+    ? Buffer.from(output.plutusDataHash, "hex")
+    : undefined;
+  if (plutusDataHash) {
+    encodedOutput.push(plutusDataHash);
+  }
+
+  return encodedOutput;
+};
+
 export const encodeOutputs = (outputs: Array<Output>): Array<EncodedOutput> => {
   const encodedOutputs: Array<EncodedOutput> = outputs.map((output) => {
-    const amount: EncodedAmount =
-      output.tokens.length > 0 ? [output.amount, encodeOutputTokens(output.tokens)] : output.amount;
-
-    const result: EncodedOutput = [output.address.getBytes(), amount];
-    const plutusDataHash = output.plutusDataHash
-      ? Buffer.from(output.plutusDataHash, "hex")
-      : undefined;
-    if (plutusDataHash) {
-      result.push(plutusDataHash);
-    }
-    return result;
+    return encodeOutput(output);
   }, []);
   return encodedOutputs;
 };
