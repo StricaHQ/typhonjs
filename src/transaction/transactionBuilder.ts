@@ -272,6 +272,12 @@ export function transactionBuilder({
   } else {
     throw new Error("Not enough tokens");
   }
+
+  const txSize = transaction.calculateTxSize();
+
+  if (transaction.protocolParams.maxTxSize && txSize > transaction.protocolParams.maxTxSize) {
+    throw new Error("Tx size limit reached, try spending lesser ADA/Tokens");
+  }
   return transaction;
 }
 

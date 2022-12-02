@@ -407,4 +407,5 @@ export type ProtocolParams = {
   priceSteps: BigNumber;
   priceMem: BigNumber;
   languageView: LanguageView;
+  maxTxSize?: number;
 };
