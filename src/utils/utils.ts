@@ -4,7 +4,7 @@ import BigNumber from "bignumber.js";
 import _ = require("lodash");
 import bs58 from "bs58";
 import { bech32 } from "bech32";
-import { maxTokenAmount } from "../constants";
+import { maxAdaAmount, maxTokenAmount } from "../constants";
 import BaseAddress from "../address/BaseAddress";
 import ByronAddress from "../address/ByronAddress";
 import EnterpriseAddress from "../address/EnterpriseAddress";
@@ -18,10 +18,17 @@ import {
   CardanoAddress,
   AuxiliaryData,
   PlutusData,
+  Output,
 } from "../types";
 import RewardAddress from "../address/RewardAddress";
-import { encodeAuxiliaryData, encodePlutusData } from "./encoder";
-import { TokenBundle } from "../internal-types";
+import { encodeAuxiliaryData, encodeOutput, encodePlutusData, encodeOutputTokens } from "./encoder";
+import { EncodedAmount, TokenBundle } from "../internal-types";
+
+export const getOutputValueSize = (adaAmount: BigNumber, tokens: Array<Token>): number => {
+  const encodedAmount: EncodedAmount =
+    tokens.length > 0 ? [adaAmount, encodeOutputTokens(tokens)] : adaAmount;
+  return cbors.Encoder.encode(encodedAmount).byteLength;
+};
 
 export const calculateMinUtxoAmount = (
   tokens: Array<Token>,
@@ -73,6 +80,16 @@ export const calculateMinUtxoAmount = (
   }
   const minUtxoWithTokens = lovelacePerUtxoWord.toNumber() * (utxoEntrySizeWithoutVal + size);
   return BigNumber.max(minUtxo, minUtxoWithTokens);
+};
+
+export const calculateMinUtxoAmountBabbage = (
+  output: Output,
+  utxoCostPerByte: BigNumber
+): BigNumber => {
+  const minADA = new BigNumber(
+    160 + cbors.Encoder.encode(encodeOutput(output)).length
+  ).multipliedBy(utxoCostPerByte);
+  return minADA;
 };
 
 export const getAddressFromHex = (hexAddress: string): CardanoAddress => {
@@ -207,24 +224,51 @@ export const getAddressFromBech32 = (bech32Address: string): CardanoAddress => {
   }
 };
 
-export const getMaximumTokenSets = (oTokens: Array<Token>): Array<Array<Token>> => {
+export const getMaximumTokenSets = (
+  oTokens: Array<Token>,
+  maxValueSizePP: number
+): Array<Array<Token>> => {
   const tokens = _.cloneDeep(oTokens);
   const result: Array<Array<Token>> = [];
   while (tokens.length > 0) {
     const tokenArray: Array<Token> = [];
     const tokenLengthFixed = tokens.length;
     for (let i = 0; i < tokenLengthFixed; i += 1) {
-      const token = tokens.pop() as Token;
-      if (token.amount.lte(maxTokenAmount)) {
-        tokenArray.push(token);
-      } else {
-        tokenArray.push({
-          assetName: token.assetName,
-          policyId: token.policyId,
-          amount: new BigNumber(maxTokenAmount),
-        });
-        token.amount = token.amount.minus(maxTokenAmount);
-        tokens.push(token);
+      const token = tokens.shift() as Token;
+      if (token) {
+        // set default value as full token
+        let newToken = token;
+        // if the token amount is more than the max amount (int), only use max amount token
+        // add remaining amount of tokens into another output set
+        if (token.amount.gte(maxTokenAmount)) {
+          newToken = {
+            assetName: token.assetName,
+            policyId: token.policyId,
+            amount: new BigNumber(maxTokenAmount),
+          };
+        }
+
+        // calculate the current token set size
+        const tokenArrayOutputSize = getOutputValueSize(new BigNumber(maxAdaAmount), [
+          ...tokenArray,
+          newToken,
+        ]);
+
+        // only add the token to the current set if its under maxValueSize limit
+        if (tokenArrayOutputSize < maxValueSizePP) {
+          tokenArray.push(newToken);
+
+          // if the above token used in this set had max value
+          // add the remaining token amount for the next set
+          if (token.amount.gte(maxTokenAmount)) {
+            token.amount = token.amount.minus(maxTokenAmount);
+            tokens.push(token);
+          }
+        } else {
+          // add the popped token back to main list, since it didn't make it into the current set
+          tokens.push(token);
+        }
+        // while modifying this func, make sure to handle the case above, no logic must follow this line
       }
     }
     result.push(tokenArray);

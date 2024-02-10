@@ -2,7 +2,11 @@ import BigNumber from "bignumber.js";
 import _ = require("lodash");
 import { CardanoAddress, Input, Output, CollateralInput } from "../types";
 import { getTokenDiff } from "../utils/helpers";
-import { calculateMinUtxoAmount, getMaximumTokenSets } from "../utils/utils";
+import {
+  calculateMinUtxoAmountBabbage,
+  getAddressFromHex,
+  getMaximumTokenSets,
+} from "../utils/utils";
 import Transaction from "./Transaction";
 
 export function transactionBuilder({
@@ -45,9 +49,15 @@ export function transactionBuilder({
     }
   };
 
-  const minUtxo = calculateMinUtxoAmount(
-    [],
-    new BigNumber(transaction.protocolParams.lovelacePerUtxoWord)
+  const minUtxo = calculateMinUtxoAmountBabbage(
+    {
+      address: getAddressFromHex(
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      ),
+      amount: new BigNumber(45000000000000000),
+      tokens: [],
+    },
+    new BigNumber(transaction.protocolParams.utxoCostPerByte)
   );
 
   const utxoInputs = _.cloneDeep(inputs);
@@ -113,14 +123,18 @@ export function transactionBuilder({
         }
       }
     } else if (!tokenDiff.some(({ amount }) => amount.lt(0))) {
-      const tokensTokens = getMaximumTokenSets(tokenDiff);
+      const tokensTokens = getMaximumTokenSets(tokenDiff, transaction.protocolParams.maxValueSize);
       const changeOutputs: Array<Output> = [];
       let inputDiff = currentInput.minus(totalOutputAda.plus(additionalOutput));
       let extraAdaRequired = new BigNumber(0);
       for (const [index, tokens] of tokensTokens.entries()) {
-        const minUtxo = calculateMinUtxoAmount(
-          tokens,
-          new BigNumber(transaction.protocolParams.lovelacePerUtxoWord)
+        const minUtxo = calculateMinUtxoAmountBabbage(
+          {
+            address: changeAddress,
+            amount: new BigNumber(45000000000000000),
+            tokens,
+          },
+          new BigNumber(transaction.protocolParams.utxoCostPerByte)
         );
         let outputAmount = minUtxo;
         if (index === tokensTokens.length - 1) {
@@ -209,14 +223,17 @@ export function transactionBuilder({
       throw new Error("Not enough ADA");
     }
   } else if (!tokenDiff.some(({ amount }) => amount.lt(0))) {
-    const tokensTokens = getMaximumTokenSets(_.clone(tokenDiff));
+    const tokensTokens = getMaximumTokenSets(
+      _.clone(tokenDiff),
+      transaction.protocolParams.maxValueSize
+    );
     const changeOutputs: Array<Output> = [];
     {
       let changeADA = currentInput.minus(currentOutput);
       tokensTokens.forEach((tokens, index) => {
-        const minUtxo = calculateMinUtxoAmount(
-          tokens,
-          new BigNumber(transaction.protocolParams.lovelacePerUtxoWord)
+        const minUtxo = calculateMinUtxoAmountBabbage(
+          { address: changeAddress, amount: new BigNumber(45000000000000000), tokens },
+          new BigNumber(transaction.protocolParams.utxoCostPerByte)
         );
         let outputAmount = minUtxo;
         if (index === tokensTokens.length - 1) {
@@ -252,9 +269,9 @@ export function transactionBuilder({
     transaction.setFee(feeWithChange);
     let changeADA = currentInput.minus(currentOutput).minus(feeWithChange);
     tokensTokens.forEach((tokens, index) => {
-      const minUtxo = calculateMinUtxoAmount(
-        tokens,
-        new BigNumber(transaction.protocolParams.lovelacePerUtxoWord)
+      const minUtxo = calculateMinUtxoAmountBabbage(
+        { address: changeAddress, amount: new BigNumber(45000000000000000), tokens },
+        new BigNumber(transaction.protocolParams.utxoCostPerByte)
       );
       let outputAmount = minUtxo;
       if (index === tokensTokens.length - 1) {

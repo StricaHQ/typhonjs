@@ -403,9 +403,11 @@ export type ProtocolParams = {
   minFeeB: BigNumber;
   stakeKeyDeposit: BigNumber;
   lovelacePerUtxoWord: BigNumber;
+  utxoCostPerByte: BigNumber;
   collateralPercent: BigNumber;
   priceSteps: BigNumber;
   priceMem: BigNumber;
   languageView: LanguageView;
   maxTxSize?: number;
+  maxValueSize: number;
 };

@@ -45,7 +45,7 @@ import {
   encodeWitnesses,
 } from "../utils/encoder";
 import { hash32 } from "../utils/crypto";
-import { calculateMinUtxoAmount } from "../utils/utils";
+import { calculateMinUtxoAmountBabbage } from "../utils/utils";
 import transactionBuilder from "./transactionBuilder";
 import { paymentTransaction } from "./paymentTransaction";
 
@@ -338,12 +338,8 @@ export class Transaction {
     return this.fee;
   }
 
-  calculateMinUtxoAmount(tokens: Array<Token>, hasPlutusDataHash?: boolean): BigNumber {
-    return calculateMinUtxoAmount(
-      tokens,
-      this._protocolParams.lovelacePerUtxoWord,
-      hasPlutusDataHash
-    );
+  calculateMinUtxoAmountBabbage(output: Output): BigNumber {
+    return calculateMinUtxoAmountBabbage(output, this._protocolParams.utxoCostPerByte);
   }
 
   addWitness(witness: VKeyWitness): void {

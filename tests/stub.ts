@@ -1,13 +1,14 @@
 import BigNumber from "bignumber.js";
 import { utils } from "../src";
 import { BaseAddress } from "../src/address";
-import { HashCredential, HashType, Input, NetworkId } from "../src/types";
+import { HashCredential, HashType, Input, NetworkId, PlutusData } from "../src/types";
 
 export const pParams = {
   minFeeA: new BigNumber(44),
   minFeeB: new BigNumber(155381),
   stakeKeyDeposit: new BigNumber(2000000),
   lovelacePerUtxoWord: new BigNumber(34482),
+  utxoCostPerByte: new BigNumber(4310),
   collateralPercent: new BigNumber(150),
   priceSteps: new BigNumber(0.0577),
   priceMem: new BigNumber(0.0000721),
@@ -181,6 +182,7 @@ export const pParams = {
       "sliceByteString-cpu-arguments-intercept": 150000,
     },
   },
+  maxValueSize: 5000,
 };
 
 export const tokens = [
@@ -300,3 +302,81 @@ export const UTXOs: Array<Input> = [
     address: address1,
   },
 ];
+
+export const plutusDataD1: PlutusData = {
+  constructor: 0,
+  fields: [
+    {
+      constructor: 0,
+      fields: [
+        {
+          constructor: 0,
+          fields: [Buffer.from("8b9818f41dffe69cb6725294ab2e8411f955fba26b1987b13bd063da", "hex")],
+        },
+        {
+          constructor: 0,
+          fields: [
+            {
+              constructor: 0,
+              fields: [
+                {
+                  constructor: 0,
+                  fields: [
+                    Buffer.from("1809eac6f8eb4d2fdb99c1e3c36295a4d669dd53b554a54d0a501fa7", "hex"),
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      constructor: 0,
+      fields: [
+        {
+          constructor: 0,
+          fields: [Buffer.from("8b9818f41dffe69cb6725294ab2e8411f955fba26b1987b13bd063da", "hex")],
+        },
+        {
+          constructor: 0,
+          fields: [
+            {
+              constructor: 0,
+              fields: [
+                {
+                  constructor: 0,
+                  fields: [
+                    Buffer.from("1809eac6f8eb4d2fdb99c1e3c36295a4d669dd53b554a54d0a501fa7", "hex"),
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      constructor: 1,
+      fields: [],
+    },
+    {
+      constructor: 0,
+      fields: [
+        {
+          constructor: 0,
+          fields: [
+            Buffer.from("85d87212f6096732ac1cdbf604a12aa8cfd1fd0b66ab28fc77d3764c", "hex"),
+
+            Buffer.from("44494e4f", "hex"),
+          ],
+        },
+
+        6976381442,
+      ],
+    },
+    2000000,
+
+    2000000,
+  ],
+};
