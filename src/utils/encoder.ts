@@ -25,6 +25,7 @@ import {
   PlutusScriptType,
   NativeScript,
   Mint,
+  ReferenceInput,
 } from "../types";
 import { sanitizeMetadata } from "./helpers";
 import { hash32 } from "./crypto";
@@ -50,7 +51,7 @@ import {
   TokenBundle,
 } from "../internal-types";
 
-export const encodeInputs = (inputs: Array<Input>): Array<EncodedInput> => {
+export const encodeInputs = (inputs: Array<Input | ReferenceInput>): Array<EncodedInput> => {
   const encodedInputs: Array<EncodedInput> = inputs.map((input) => {
     const txHash = Buffer.from(input.txId, "hex");
     return [txHash, input.index];
@@ -242,16 +243,23 @@ export const encodeWitnesses = (
     encodedPlutusDataList.push(encodedPlutusData);
   }
   const encodedPlutusScriptsV1: Array<EncodedPlutusScript> = [];
+  const encodedPlutusScriptsV2: Array<EncodedPlutusScript> = [];
   for (const [script, scriptType] of plutusScriptMap) {
     if (scriptType === PlutusScriptType.PlutusScriptV1) {
       const pls = cbors.Decoder.decode(Buffer.from(script, "hex"));
       encodedPlutusScriptsV1.push(pls.value);
+    } else if (scriptType === PlutusScriptType.PlutusScriptV2) {
+      const pls = cbors.Decoder.decode(Buffer.from(script, "hex"));
+      encodedPlutusScriptsV2.push(pls.value);
     } else {
       throw new Error("Unsupported PlutusScript Version");
     }
   }
   if (encodedPlutusScriptsV1.length) {
-    encodedWitnesses.set(WitnessType.PLUTUS_SCRIPT, encodedPlutusScriptsV1);
+    encodedWitnesses.set(WitnessType.PLUTUS_SCRIPT_V1, encodedPlutusScriptsV1);
+  }
+  if (encodedPlutusScriptsV2.length) {
+    encodedWitnesses.set(WitnessType.PLUTUS_SCRIPT_V2, encodedPlutusScriptsV2);
   }
 
   const encodedNativeScriptMap: Map<string, EncodedNativeScript> = new Map();
@@ -366,11 +374,12 @@ export const encodePlutusData = (plutusData: PlutusData): EncodedPlutusData => {
 
 export const encodeLanguageViews = (
   languageView: LanguageView,
-  encodedPlutusScripts?: Array<EncodedPlutusScript>
+  plutusV1: boolean,
+  plutusV2: boolean
 ): string => {
   const encodedLanguageView = new Map();
 
-  if (encodedPlutusScripts && encodedPlutusScripts.length > 0) {
+  if (plutusV1) {
     // The encoding is Plutus V1 Specific
     const costMdls = _(languageView.PlutusScriptV1)
       .map((value, key) => ({
@@ -381,11 +390,28 @@ export const encodeLanguageViews = (
       .map((item) => item.value)
       .value();
 
+    // indefinite array encoding
     const indefCostMdls = cbors.IndefiniteArray.from(costMdls);
+
+    // for V1, encode values before adding to view map
     const cborCostMdls = cbors.Encoder.encode(indefCostMdls);
     const langId = cbors.Encoder.encode(0);
     // Plutus V1
     encodedLanguageView.set(langId, cborCostMdls);
+  }
+  if (plutusV2) {
+    // The encoding is Plutus V2 Specific
+    const costMdls = _(languageView.PlutusScriptV1)
+      .map((value, key) => ({
+        key,
+        value,
+      }))
+      .orderBy(["key"], ["asc"])
+      .map((item) => item.value)
+      .value();
+
+    // Plutus V2
+    encodedLanguageView.set(1, costMdls);
   }
 
   return cbors.Encoder.encode(encodedLanguageView).toString("hex");

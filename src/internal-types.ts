@@ -58,7 +58,8 @@ export type EncodedRedeemer = [number, number, EncodedPlutusData, EncodedExUnits
 
 export type EncodedWitnesses = Map<WitnessType.V_KEY_WITNESS, Array<EncodedVKeyWitness>> &
   Map<WitnessType.NATIVE_SCRIPT, Array<EncodedNativeScript>> &
-  Map<WitnessType.PLUTUS_SCRIPT, Array<EncodedPlutusScript>> &
+  Map<WitnessType.PLUTUS_SCRIPT_V1, Array<EncodedPlutusScript>> &
+  Map<WitnessType.PLUTUS_SCRIPT_V2, Array<EncodedPlutusScript>> &
   Map<WitnessType.PLUTUS_DATA, Array<EncodedPlutusData>> &
   Map<WitnessType.REDEEMER, Array<EncodedRedeemer>>;
 

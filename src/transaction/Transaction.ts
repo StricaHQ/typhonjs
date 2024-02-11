@@ -32,6 +32,7 @@ import type {
   Withdrawal,
   Token,
   VKeyWitness,
+  ReferenceInput,
 } from "../types";
 import {
   encodeAuxiliaryData,
@@ -53,6 +54,7 @@ export class Transaction {
   protected _protocolParams: ProtocolParams;
 
   protected inputs: Array<Input> = [];
+  protected referenceInputs: Array<ReferenceInput> = [];
   protected outputs: Array<Output> = [];
   protected certificates: Array<Certificate> = [];
   protected withdrawals: Array<Withdrawal> = [];
@@ -67,7 +69,8 @@ export class Transaction {
   protected collaterals: Array<CollateralInput> = [];
   protected requiredSigners: Map<string, BipPath | undefined> = new Map();
   protected plutusDataList: Array<PlutusData> = [];
-  protected _isPlutusTransaction = false;
+  protected _isPlutusV1Transaction = false;
+  protected _isPlutusV2Transaction = false;
   protected mints: Array<Mint> = [];
   protected validityIntervalStart: number | undefined;
 
@@ -103,11 +106,16 @@ export class Transaction {
       );
     } else if (input.address.paymentCredential.type === HashType.SCRIPT) {
       if (input.address.paymentCredential.plutusScript) {
-        this._isPlutusTransaction = true;
         this.plutusScriptMap.set(
           input.address.paymentCredential.plutusScript.cborHex,
           input.address.paymentCredential.plutusScript.type
         );
+        if (input.address.paymentCredential.plutusScript.type === PlutusScriptType.PlutusScriptV1) {
+          this._isPlutusV1Transaction = true;
+        }
+        if (input.address.paymentCredential.plutusScript.type === PlutusScriptType.PlutusScriptV2) {
+          this._isPlutusV2Transaction = true;
+        }
       } else if (input.address.paymentCredential.nativeScript) {
         const nativeScript = input.address.paymentCredential.nativeScript;
         const pubKeyHashList = getPubKeyHashListFromNativeScript(nativeScript);
@@ -121,6 +129,11 @@ export class Transaction {
       this.plutusDataList.push(input.plutusData);
     }
     this.inputs.push(input);
+  }
+
+  addReferenceInput(input: ReferenceInput): void {
+    this._isPlutusV2Transaction = true;
+    this.referenceInputs.push(input);
   }
 
   addRequiredSigner(credential: HashCredential): void {
@@ -140,8 +153,14 @@ export class Transaction {
   addMint(mint: Mint): void {
     this.mints.push(mint);
     if (mint.plutusScript) {
-      this._isPlutusTransaction = true;
       this.plutusScriptMap.set(mint.plutusScript.cborHex, mint.plutusScript.type);
+
+      if (mint.plutusScript.type === PlutusScriptType.PlutusScriptV1) {
+        this._isPlutusV1Transaction = true;
+      }
+      if (mint.plutusScript.type === PlutusScriptType.PlutusScriptV2) {
+        this._isPlutusV2Transaction = true;
+      }
     } else if (mint.nativeScript) {
       // used to guesstimate fees by required pkh witnesses inside nativescript
       // this flow can be improved in future version
@@ -204,6 +223,7 @@ export class Transaction {
   }): unknown {
     const encodedBody = new Map<TransactionBodyItemType, unknown>();
     encodedBody.set(TransactionBodyItemType.INPUTS, encodeInputs(this.inputs));
+    encodedBody.set(TransactionBodyItemType.REFERENCE_INPUTS, encodeInputs(this.referenceInputs));
     let trxOutputs = this.outputs;
     if (extraOutputs && extraOutputs.length > 0) {
       trxOutputs = trxOutputs.concat(extraOutputs);
@@ -309,8 +329,10 @@ export class Transaction {
       this.mints
     );
     const scriptDataHash = generateScriptDataHash(
+      this._protocolParams.languageView,
       encodedWitnesses,
-      this._protocolParams.languageView
+      this._isPlutusV1Transaction,
+      this._isPlutusV2Transaction
     );
     const encodedBody = this.transactionBody({ extraOutputs, scriptDataHash });
     const transaction = [
@@ -356,8 +378,10 @@ export class Transaction {
       this.mints
     );
     const scriptDataHash = generateScriptDataHash(
+      this._protocolParams.languageView,
       encodedWitnesses,
-      this._protocolParams.languageView
+      this._isPlutusV1Transaction,
+      this._isPlutusV2Transaction
     );
     const encodedBody = this.transactionBody({ scriptDataHash });
     const cborBody = cbors.Encoder.encode(encodedBody) as Buffer;
@@ -387,8 +411,10 @@ export class Transaction {
       this.mints
     );
     const scriptDataHash = generateScriptDataHash(
+      this._protocolParams.languageView,
       encodedWitnesses,
-      this._protocolParams.languageView
+      this._isPlutusV1Transaction,
+      this._isPlutusV2Transaction
     );
     const encodedBody = this.transactionBody({ scriptDataHash });
     const transaction = [
@@ -500,8 +526,10 @@ export class Transaction {
       this.mints
     );
     const scriptDataHash = generateScriptDataHash(
+      this._protocolParams.languageView,
       encodedWitnesses,
-      this._protocolParams.languageView
+      this._isPlutusV1Transaction,
+      this._isPlutusV2Transaction
     );
 
     return scriptDataHash;
@@ -593,7 +621,7 @@ export class Transaction {
   }
 
   isPlutusTransaction(): boolean {
-    return this._isPlutusTransaction;
+    return this._isPlutusV1Transaction || this._isPlutusV2Transaction;
   }
 
   /**

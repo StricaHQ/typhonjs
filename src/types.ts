@@ -26,7 +26,7 @@ export enum HashType {
 
 export enum PlutusScriptType {
   PlutusScriptV1 = "PlutusScriptV1",
-  // PlutusScriptV2 = "PlutusScriptV2", upcoming
+  PlutusScriptV2 = "PlutusScriptV2",
 }
 
 export type HashCredential = {
@@ -91,9 +91,10 @@ export enum CertificateType {
 export enum WitnessType {
   V_KEY_WITNESS = 0,
   NATIVE_SCRIPT = 1,
-  PLUTUS_SCRIPT = 3,
+  PLUTUS_SCRIPT_V1 = 3,
   PLUTUS_DATA = 4,
   REDEEMER = 5,
+  PLUTUS_SCRIPT_V2 = 6,
 }
 
 export enum NetworkId {
@@ -114,6 +115,10 @@ export enum TransactionBodyItemType {
   SCRIPT_DATA_HASH = 11,
   COLLATERAL_INPUTS = 13,
   REQUIRED_SIGNERS = 14,
+  NETWORK_ID = 15,
+  COLLATERAL_OUTPUT = 16,
+  TOTAL_COLLATERAL = 17,
+  REFERENCE_INPUTS = 18,
 }
 
 export type Token = {
@@ -130,6 +135,15 @@ export type Input = {
   address: ShelleyAddress;
   plutusData?: PlutusData;
   redeemer?: Redeemer;
+};
+
+export type ReferenceInput = {
+  txId: string;
+  index: number;
+  amount?: BigNumber;
+  tokens?: Array<Token>;
+  address?: ShelleyAddress;
+  plutusData?: PlutusData;
 };
 
 export type Asset = {
@@ -395,6 +409,183 @@ export type LanguageView = {
     "verifySignature-memory-arguments": number;
     "cekLamCost-exBudgetMemory": number;
     "sliceByteString-cpu-arguments-intercept": number;
+  };
+  PlutusScriptV2: {
+    "addInteger-cpu-arguments-intercept": number;
+    "addInteger-cpu-arguments-slope": number;
+    "addInteger-memory-arguments-intercept": number;
+    "addInteger-memory-arguments-slope": number;
+    "appendByteString-cpu-arguments-intercept": number;
+    "appendByteString-cpu-arguments-slope": number;
+    "appendByteString-memory-arguments-intercept": number;
+    "appendByteString-memory-arguments-slope": number;
+    "appendString-cpu-arguments-intercept": number;
+    "appendString-cpu-arguments-slope": number;
+    "appendString-memory-arguments-intercept": number;
+    "appendString-memory-arguments-slope": number;
+    "bData-cpu-arguments": number;
+    "bData-memory-arguments": number;
+    "blake2b_256-cpu-arguments-intercept": number;
+    "blake2b_256-cpu-arguments-slope": number;
+    "blake2b_256-memory-arguments": number;
+    "cekApplyCost-exBudgetCPU": number;
+    "cekApplyCost-exBudgetMemory": number;
+    "cekBuiltinCost-exBudgetCPU": number;
+    "cekBuiltinCost-exBudgetMemory": number;
+    "cekConstCost-exBudgetCPU": number;
+    "cekConstCost-exBudgetMemory": number;
+    "cekDelayCost-exBudgetCPU": number;
+    "cekDelayCost-exBudgetMemory": number;
+    "cekForceCost-exBudgetCPU": number;
+    "cekForceCost-exBudgetMemory": number;
+    "cekLamCost-exBudgetCPU": number;
+    "cekLamCost-exBudgetMemory": number;
+    "cekStartupCost-exBudgetCPU": number;
+    "cekStartupCost-exBudgetMemory": number;
+    "cekVarCost-exBudgetCPU": number;
+    "cekVarCost-exBudgetMemory": number;
+    "chooseData-cpu-arguments": number;
+    "chooseData-memory-arguments": number;
+    "chooseList-cpu-arguments": number;
+    "chooseList-memory-arguments": number;
+    "chooseUnit-cpu-arguments": number;
+    "chooseUnit-memory-arguments": number;
+    "consByteString-cpu-arguments-intercept": number;
+    "consByteString-cpu-arguments-slope": number;
+    "consByteString-memory-arguments-intercept": number;
+    "consByteString-memory-arguments-slope": number;
+    "constrData-cpu-arguments": number;
+    "constrData-memory-arguments": number;
+    "decodeUtf8-cpu-arguments-intercept": number;
+    "decodeUtf8-cpu-arguments-slope": number;
+    "decodeUtf8-memory-arguments-intercept": number;
+    "decodeUtf8-memory-arguments-slope": number;
+    "divideInteger-cpu-arguments-constant": number;
+    "divideInteger-cpu-arguments-model-arguments-intercept": number;
+    "divideInteger-cpu-arguments-model-arguments-slope": number;
+    "divideInteger-memory-arguments-intercept": number;
+    "divideInteger-memory-arguments-minimum": number;
+    "divideInteger-memory-arguments-slope": number;
+    "encodeUtf8-cpu-arguments-intercept": number;
+    "encodeUtf8-cpu-arguments-slope": number;
+    "encodeUtf8-memory-arguments-intercept": number;
+    "encodeUtf8-memory-arguments-slope": number;
+    "equalsByteString-cpu-arguments-constant": number;
+    "equalsByteString-cpu-arguments-intercept": number;
+    "equalsByteString-cpu-arguments-slope": number;
+    "equalsByteString-memory-arguments": number;
+    "equalsData-cpu-arguments-intercept": number;
+    "equalsData-cpu-arguments-slope": number;
+    "equalsData-memory-arguments": number;
+    "equalsInteger-cpu-arguments-intercept": number;
+    "equalsInteger-cpu-arguments-slope": number;
+    "equalsInteger-memory-arguments": number;
+    "equalsString-cpu-arguments-constant": number;
+    "equalsString-cpu-arguments-intercept": number;
+    "equalsString-cpu-arguments-slope": number;
+    "equalsString-memory-arguments": number;
+    "fstPair-cpu-arguments": number;
+    "fstPair-memory-arguments": number;
+    "headList-cpu-arguments": number;
+    "headList-memory-arguments": number;
+    "iData-cpu-arguments": number;
+    "iData-memory-arguments": number;
+    "ifThenElse-cpu-arguments": number;
+    "ifThenElse-memory-arguments": number;
+    "indexByteString-cpu-arguments": number;
+    "indexByteString-memory-arguments": number;
+    "lengthOfByteString-cpu-arguments": number;
+    "lengthOfByteString-memory-arguments": number;
+    "lessThanByteString-cpu-arguments-intercept": number;
+    "lessThanByteString-cpu-arguments-slope": number;
+    "lessThanByteString-memory-arguments": number;
+    "lessThanEqualsByteString-cpu-arguments-intercept": number;
+    "lessThanEqualsByteString-cpu-arguments-slope": number;
+    "lessThanEqualsByteString-memory-arguments": number;
+    "lessThanEqualsInteger-cpu-arguments-intercept": number;
+    "lessThanEqualsInteger-cpu-arguments-slope": number;
+    "lessThanEqualsInteger-memory-arguments": number;
+    "lessThanInteger-cpu-arguments-intercept": number;
+    "lessThanInteger-cpu-arguments-slope": number;
+    "lessThanInteger-memory-arguments": number;
+    "listData-cpu-arguments": number;
+    "listData-memory-arguments": number;
+    "mapData-cpu-arguments": number;
+    "mapData-memory-arguments": number;
+    "mkCons-cpu-arguments": number;
+    "mkCons-memory-arguments": number;
+    "mkNilData-cpu-arguments": number;
+    "mkNilData-memory-arguments": number;
+    "mkNilPairData-cpu-arguments": number;
+    "mkNilPairData-memory-arguments": number;
+    "mkPairData-cpu-arguments": number;
+    "mkPairData-memory-arguments": number;
+    "modInteger-cpu-arguments-constant": number;
+    "modInteger-cpu-arguments-model-arguments-intercept": number;
+    "modInteger-cpu-arguments-model-arguments-slope": number;
+    "modInteger-memory-arguments-intercept": number;
+    "modInteger-memory-arguments-minimum": number;
+    "modInteger-memory-arguments-slope": number;
+    "multiplyInteger-cpu-arguments-intercept": number;
+    "multiplyInteger-cpu-arguments-slope": number;
+    "multiplyInteger-memory-arguments-intercept": number;
+    "multiplyInteger-memory-arguments-slope": number;
+    "nullList-cpu-arguments": number;
+    "nullList-memory-arguments": number;
+    "quotientInteger-cpu-arguments-constant": number;
+    "quotientInteger-cpu-arguments-model-arguments-intercept": number;
+    "quotientInteger-cpu-arguments-model-arguments-slope": number;
+    "quotientInteger-memory-arguments-intercept": number;
+    "quotientInteger-memory-arguments-minimum": number;
+    "quotientInteger-memory-arguments-slope": number;
+    "remainderInteger-cpu-arguments-constant": number;
+    "remainderInteger-cpu-arguments-model-arguments-intercept": number;
+    "remainderInteger-cpu-arguments-model-arguments-slope": number;
+    "remainderInteger-memory-arguments-intercept": number;
+    "remainderInteger-memory-arguments-minimum": number;
+    "remainderInteger-memory-arguments-slope": number;
+    "serialiseData-cpu-arguments-intercept": number;
+    "serialiseData-cpu-arguments-slope": number;
+    "serialiseData-memory-arguments-intercept": number;
+    "serialiseData-memory-arguments-slope": number;
+    "sha2_256-cpu-arguments-intercept": number;
+    "sha2_256-cpu-arguments-slope": number;
+    "sha2_256-memory-arguments": number;
+    "sha3_256-cpu-arguments-intercept": number;
+    "sha3_256-cpu-arguments-slope": number;
+    "sha3_256-memory-arguments": number;
+    "sliceByteString-cpu-arguments-intercept": number;
+    "sliceByteString-cpu-arguments-slope": number;
+    "sliceByteString-memory-arguments-intercept": number;
+    "sliceByteString-memory-arguments-slope": number;
+    "sndPair-cpu-arguments": number;
+    "sndPair-memory-arguments": number;
+    "subtractInteger-cpu-arguments-intercept": number;
+    "subtractInteger-cpu-arguments-slope": number;
+    "subtractInteger-memory-arguments-intercept": number;
+    "subtractInteger-memory-arguments-slope": number;
+    "tailList-cpu-arguments": number;
+    "tailList-memory-arguments": number;
+    "trace-cpu-arguments": number;
+    "trace-memory-arguments": number;
+    "unBData-cpu-arguments": number;
+    "unBData-memory-arguments": number;
+    "unConstrData-cpu-arguments": number;
+    "unConstrData-memory-arguments": number;
+    "unIData-cpu-arguments": number;
+    "unIData-memory-arguments": number;
+    "unListData-cpu-arguments": number;
+    "unListData-memory-arguments": number;
+    "unMapData-cpu-arguments": number;
+    "unMapData-memory-arguments": number;
+    "verifyEcdsaSecp256k1Signature-cpu-arguments": number;
+    "verifyEcdsaSecp256k1Signature-memory-arguments": number;
+    "verifyEd25519Signature-cpu-arguments-intercept": number;
+    "verifyEd25519Signature-cpu-arguments-slope": number;
+    "verifyEd25519Signature-memory-arguments": number;
+    "verifySchnorrSecp256k1Signature-cpu-arguments-intercept": number;
+    "verifySchnorrSecp256k1Signature-cpu-arguments-slope": number;
+    "verifySchnorrSecp256k1Signature-memory-arguments": number;
   };
 };
 

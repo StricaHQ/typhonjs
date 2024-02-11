@@ -99,15 +99,15 @@ export const sortTokens = (tokens: Array<Token>): Array<Token> => {
 };
 
 export const generateScriptDataHash = (
+  languageView: LanguageView,
   witnesses: EncodedWitnesses,
-  languageView: LanguageView
+  isPlutusV1: boolean,
+  isPlutusV2: boolean
 ): Buffer | undefined => {
   const encodedPlutusDataList = witnesses.get(WitnessType.PLUTUS_DATA);
   const encodedRedeemers = witnesses.get(WitnessType.REDEEMER);
-
-  if (encodedPlutusDataList || encodedRedeemers) {
-    const encodedPlutusScripts = witnesses.get(WitnessType.PLUTUS_SCRIPT);
-    const langViewCbor = encodeLanguageViews(languageView, encodedPlutusScripts);
+  if (isPlutusV1 || isPlutusV2) {
+    const langViewCbor = encodeLanguageViews(languageView, isPlutusV1, isPlutusV2);
 
     const plutusDataCbor = encodedPlutusDataList?.length
       ? cbors.Encoder.encode(encodedPlutusDataList).toString("hex")
