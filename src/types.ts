@@ -102,25 +102,6 @@ export enum NetworkId {
   TESTNET = 0,
 }
 
-export enum TransactionBodyItemType {
-  INPUTS = 0,
-  OUTPUTS = 1,
-  FEE = 2,
-  TTL = 3,
-  CERTIFICATES = 4,
-  WITHDRAWALS = 5,
-  AUXILIARY_DATA_HASH = 7,
-  VALIDITY_INTERVAL_START = 8,
-  MINT = 9,
-  SCRIPT_DATA_HASH = 11,
-  COLLATERAL_INPUTS = 13,
-  REQUIRED_SIGNERS = 14,
-  NETWORK_ID = 15,
-  COLLATERAL_OUTPUT = 16,
-  TOTAL_COLLATERAL = 17,
-  REFERENCE_INPUTS = 18,
-}
-
 export type Token = {
   policyId: string;
   assetName: string;
@@ -172,6 +153,8 @@ export type Output = {
   tokens: Array<Token>;
   plutusData?: PlutusData;
   plutusDataHash?: string;
+  plutusScript?: PlutusScript;
+  nativeScript?: NativeScript;
 };
 
 export type StakeRegistrationCertificate = {

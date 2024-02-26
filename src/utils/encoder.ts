@@ -49,6 +49,7 @@ import {
   RedeemerTag,
   EncodedNativeScript,
   TokenBundle,
+  OutputItemType,
 } from "../internal-types";
 
 export const encodeInputs = (inputs: Array<Input | ReferenceInput>): Array<EncodedInput> => {
@@ -102,14 +103,37 @@ export const encodeOutput = (output: Output): EncodedOutput => {
   const amount: EncodedAmount =
     output.tokens.length > 0 ? [output.amount, encodeOutputTokens(output.tokens)] : output.amount;
 
-  const encodedOutput: EncodedOutput = [output.address.getBytes(), amount];
+  // Babbage era output with inline datum and refScript support
+  const encodedOutput: EncodedOutput = new Map();
+  encodedOutput.set(OutputItemType.ADDRESS, output.address.getBytes());
+  encodedOutput.set(OutputItemType.VALUE, amount);
+
   const plutusDataHash = output.plutusDataHash
     ? Buffer.from(output.plutusDataHash, "hex")
     : undefined;
   if (plutusDataHash) {
-    encodedOutput.push(plutusDataHash);
+    encodedOutput.set(OutputItemType.DATUM_OPTION, [0, plutusDataHash]);
+  } else if (output.plutusData) {
+    const encodedPlutusData = cbors.Encoder.encode(encodePlutusData(output.plutusData));
+    encodedOutput.set(OutputItemType.DATUM_OPTION, [1, new cbors.CborTag(encodedPlutusData, 24)]);
   }
 
+  let refScript;
+  if (output.plutusScript) {
+    if (output.plutusScript.type === PlutusScriptType.PlutusScriptV1) {
+      refScript = [1, Buffer.from(output.plutusScript.cborHex, "hex")];
+    } else if (output.plutusScript.type === PlutusScriptType.PlutusScriptV2) {
+      refScript = [2, Buffer.from(output.plutusScript.cborHex, "hex")];
+    }
+  } else if (output.nativeScript) {
+    const encodedNativeScript = cbors.Encoder.encode(encodeNativeScript(output.nativeScript));
+    refScript = [0, encodedNativeScript];
+  }
+
+  if (refScript) {
+    const refScriptCbor = cbors.Encoder.encode(refScript);
+    encodedOutput.set(OutputItemType.SCRIPT_REF, new cbors.CborTag(refScriptCbor, 24));
+  }
   return encodedOutput;
 };
 

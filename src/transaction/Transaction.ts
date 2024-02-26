@@ -21,9 +21,6 @@ import {
   PlutusData,
   PlutusScriptType,
   ProtocolParams,
-  TransactionBodyItemType,
-} from "../types";
-import type {
   BipPath,
   AuxiliaryData,
   Certificate,
@@ -49,6 +46,7 @@ import { hash32 } from "../utils/crypto";
 import { calculateMinUtxoAmountBabbage } from "../utils/utils";
 import transactionBuilder from "./transactionBuilder";
 import { paymentTransaction } from "./paymentTransaction";
+import { TransactionBodyItemType } from "../internal-types";
 
 export class Transaction {
   protected _protocolParams: ProtocolParams;
