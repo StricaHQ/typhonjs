@@ -38,7 +38,6 @@ import {
   encodeInputs,
   encodeMint,
   encodeOutputs,
-  encodePlutusData,
   encodeWithdrawals,
   encodeWitnesses,
 } from "../utils/encoder";
@@ -192,10 +191,6 @@ export class Transaction {
   addOutput(output: Output): void {
     const uOutput = output;
     uOutput.tokens = sortTokens(uOutput.tokens);
-    if (uOutput.plutusData) {
-      const encodedPlutusData = cbors.Encoder.encode(encodePlutusData(uOutput.plutusData));
-      uOutput.plutusDataHash = hash32(encodedPlutusData).toString("hex");
-    }
     this.outputs.push(uOutput);
     if (uOutput.plutusData) {
       this.plutusDataList.push(uOutput.plutusData);

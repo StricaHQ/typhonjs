@@ -57,10 +57,10 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@stricahq/cbors@1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@stricahq/cbors/-/cbors-1.0.1.tgz#e28f7fc3cc62e7399a013c1f6e0e8d0ae24333aa"
-  integrity sha512-vlQj7ygG0EQpQ7FsCTC9n7oAAvD6/Cqqsywk5vRPmdpFpCxRwB6ju+glkWwLKmshL8bJF953Oi0mLWdFEbjVcw==
+"@stricahq/cbors@1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@stricahq/cbors/-/cbors-1.0.2.tgz#e9085601b29bc04741e4e66c3f0fd207117e9f95"
+  integrity sha512-6ePsEiq7EGHA5IiPn9poA7sF5iXPqt30kKw3pjR/BhP7S+XHZNu/OPumESWnVl4AM+IEYC2x9eL+4qRPsTPVww==
   dependencies:
     bignumber.js "^9.0.2"
     buffer "^6.0.3"

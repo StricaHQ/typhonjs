@@ -49,6 +49,52 @@ describe("Typhonjs", (): void => {
     });
 
     describe("Babbage Era Min UTXO", () => {
+      it("calculate minUtxo with inline plutusDatum", () => {
+        const minUtxo = utils.calculateMinUtxoAmountBabbage(
+          {
+            address: utils.getAddressFromHex(
+              "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            ),
+            amount: new BigNumber(10),
+            tokens: [],
+            plutusData: stub.plutusDataD1,
+          },
+          stub.pParams.utxoCostPerByte
+        );
+        expect(minUtxo.toNumber()).eq(1978290);
+      });
+
+      it("calculate minUtxo with inline refScript", () => {
+        const minUtxo = utils.calculateMinUtxoAmountBabbage(
+          {
+            address: utils.getAddressFromHex(
+              "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            ),
+            amount: new BigNumber(1000000),
+            tokens: [],
+            plutusScript: stub.plutusScriptV2S1,
+          },
+          stub.pParams.utxoCostPerByte
+        );
+        expect(minUtxo.toNumber()).eq(8236410);
+      });
+
+      it("calculate minUtxo with tokens with inline plutusDatum", () => {
+        const tokens = stub.tokens;
+        const minUtxo = utils.calculateMinUtxoAmountBabbage(
+          {
+            address: utils.getAddressFromHex(
+              "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            ),
+            amount: new BigNumber(10),
+            tokens,
+            plutusData: stub.plutusDataD1,
+          },
+          stub.pParams.utxoCostPerByte
+        );
+        expect(minUtxo.toNumber()).eq(2659270);
+      });
+
       it("calculate minUtxo without tokens", () => {
         const tokens = [];
         const minUtxo = utils.calculateMinUtxoAmountBabbage(
@@ -61,7 +107,7 @@ describe("Typhonjs", (): void => {
           },
           stub.pParams.utxoCostPerByte
         );
-        expect(minUtxo.toNumber()).eq(952510);
+        expect(minUtxo.toNumber()).eq(961130);
       });
 
       it("calculate minUtxo with tokens", () => {
@@ -76,7 +122,7 @@ describe("Typhonjs", (): void => {
           },
           stub.pParams.utxoCostPerByte
         );
-        expect(minUtxo.toNumber()).eq(1224040);
+        expect(minUtxo.toNumber()).eq(1232660);
       });
 
       it("calculate minUtxo without tokens with hash", () => {
@@ -92,7 +138,7 @@ describe("Typhonjs", (): void => {
           },
           stub.pParams.utxoCostPerByte
         );
-        expect(minUtxo.toNumber()).eq(1099050);
+        expect(minUtxo.toNumber()).eq(1120600);
       });
 
       it("calculate minUtxo with tokens with hash", () => {
@@ -108,23 +154,7 @@ describe("Typhonjs", (): void => {
           },
           stub.pParams.utxoCostPerByte
         );
-        expect(minUtxo.toNumber()).eq(1780030);
-      });
-
-      it("calculate minUtxo with tokens with plutusDatum", () => {
-        const tokens = stub.tokens;
-        const minUtxo = utils.calculateMinUtxoAmountBabbage(
-          {
-            address: utils.getAddressFromHex(
-              "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-            ),
-            amount: new BigNumber(10),
-            tokens,
-            plutusData: stub.plutusDataD1,
-          },
-          stub.pParams.utxoCostPerByte
-        );
-        expect(minUtxo.toNumber()).eq(1633490);
+        expect(minUtxo.toNumber()).eq(1801580);
       });
     });
 
@@ -310,6 +340,42 @@ describe("Typhonjs", (): void => {
 
   describe("transaction", () => {
     describe("fees", () => {
+      it("calculates fees with inline ref script", () => {
+        const output: types.Output = {
+          amount: new BigNumber(5000000),
+          address: stub.receiverAddress,
+          tokens: [],
+          plutusScript: stub.plutusScriptV2S1,
+        };
+        const tx = new Transaction({ protocolParams: stub.pParams }).paymentTransaction({
+          inputs: stub.UTXOs,
+          outputs: [output],
+          changeAddress: stub.changeAddress,
+          ttl: 3000000,
+        });
+
+        const fee = tx.getFee().toNumber();
+        expect(fee).to.eq(242501);
+      });
+
+      it("calculates fees with inline plutusData", () => {
+        const output: types.Output = {
+          amount: new BigNumber(5000000),
+          address: stub.receiverAddress,
+          tokens: [],
+          plutusData: stub.plutusDataD1,
+        };
+        const tx = new Transaction({ protocolParams: stub.pParams }).paymentTransaction({
+          inputs: stub.UTXOs,
+          outputs: [output],
+          changeAddress: stub.changeAddress,
+          ttl: 3000000,
+        });
+
+        const fee = tx.getFee().toNumber();
+        expect(fee).to.eq(188953);
+      });
+
       it("calculates correct fees", () => {
         const output: types.Output = {
           amount: new BigNumber(5000000),
@@ -324,7 +390,7 @@ describe("Typhonjs", (): void => {
         });
 
         const fee = tx.getFee().toNumber();
-        expect(fee).to.eq(168141);
+        expect(fee).to.eq(168405);
       });
 
       it("calculates correct fees with tokens", () => {
@@ -341,7 +407,7 @@ describe("Typhonjs", (): void => {
         });
 
         const fee = tx.getFee().toNumber();
-        expect(fee).to.eq(176765);
+        expect(fee).to.eq(177029);
       });
 
       it("calculates correct fees with plutusDataHash", () => {
@@ -359,28 +425,7 @@ describe("Typhonjs", (): void => {
         });
 
         const fee = tx.getFee().toNumber();
-        expect(fee).to.eq(169637);
-      });
-
-      it("calculates correct fees with plutusData", () => {
-        const output: types.Output = {
-          amount: new BigNumber(5000000),
-          address: stub.receiverAddress,
-          tokens: [],
-          plutusData: {
-            constructor: 0,
-            fields: [123, 123],
-          },
-        };
-        const tx = new Transaction({ protocolParams: stub.pParams }).paymentTransaction({
-          inputs: stub.UTXOs,
-          outputs: [output],
-          changeAddress: stub.changeAddress,
-          ttl: 3000000,
-        });
-
-        const fee = tx.getFee().toNumber();
-        expect(fee).to.eq(171617);
+        expect(fee).to.eq(170033);
       });
 
       it("calculates correct fees with plutusDataHash & token", () => {
@@ -398,18 +443,15 @@ describe("Typhonjs", (): void => {
         });
 
         const fee = tx.getFee().toNumber();
-        expect(fee).to.eq(178261);
+        expect(fee).to.eq(178657);
       });
 
-      it("calculates correct fees with plutusData & token", () => {
+      it("calculates correct fees with inline plutusData & token", () => {
         const output: types.Output = {
           amount: new BigNumber(5000000),
           address: stub.receiverAddress,
           tokens: [stub.tokens[0]],
-          plutusData: {
-            constructor: 0,
-            fields: [123, 123],
-          },
+          plutusData: stub.plutusDataD1,
         };
         const tx = new Transaction({ protocolParams: stub.pParams }).paymentTransaction({
           inputs: stub.UTXOs,
@@ -419,7 +461,7 @@ describe("Typhonjs", (): void => {
         });
 
         const fee = tx.getFee().toNumber();
-        expect(fee).to.eq(180241);
+        expect(fee).to.eq(197577);
       });
     });
 
