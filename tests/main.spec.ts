@@ -648,5 +648,48 @@ describe("Typhonjs", (): void => {
         });
       });
     });
+
+    describe("collateral fields", () => {
+      const output: types.Output = {
+        amount: new BigNumber(5000000),
+        address: stub.receiverAddress,
+        tokens: [],
+      };
+
+      const colOutput: types.Output = {
+        amount: new BigNumber(8000000),
+        address: stub.receiverAddress,
+        tokens: [],
+      };
+
+      const tx = new Transaction({ protocolParams: stub.pParams });
+      tx.addInput(stub.UTXOs[0]);
+      tx.addInput(stub.UTXOs[1]);
+      tx.addOutput(output);
+      tx.addCollateral(stub.UTXOs[2]);
+      tx.setCollateralOutput(colOutput);
+      tx.setTotalCollateral(new BigNumber(30000000)); // stub 2 utxo
+
+      tx.buildTransaction();
+
+      it("can set collateral inputs", () => {
+        const colInputs = tx.getCollaterals();
+
+        expect(colInputs[0].txId).to.eq(stub.UTXOs[2].txId);
+      });
+
+      it("can set total collateral", () => {
+        const totalCollateral = tx.getTotalCollateral();
+
+        expect(totalCollateral?.toNumber()).to.eq(30000000);
+      });
+
+      it("can set collateral output", () => {
+        const collateralOutput = tx.getCollateralOutput();
+
+        expect(collateralOutput?.amount.toNumber()).to.eq(8000000);
+        expect(collateralOutput?.address.getHex()).to.eq(stub.receiverAddress.getHex());
+      });
+    });
   });
 });

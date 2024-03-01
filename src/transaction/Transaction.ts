@@ -37,6 +37,7 @@ import {
   encodeCollaterals,
   encodeInputs,
   encodeMint,
+  encodeOutput,
   encodeOutputs,
   encodeWithdrawals,
   encodeWitnesses,
@@ -64,6 +65,8 @@ export class Transaction {
   protected nativeScriptList: Array<NativeScript> = [];
   protected auxiliaryData: AuxiliaryData | undefined;
   protected collaterals: Array<CollateralInput> = [];
+  protected collateralOutput: Output | undefined;
+  protected totalCollateral: BigNumber | undefined;
   protected requiredSigners: Map<string, BipPath | undefined> = new Map();
   protected plutusDataList: Array<PlutusData> = [];
   protected _isPlutusV1Transaction = false;
@@ -207,6 +210,27 @@ export class Transaction {
     this.withdrawals.push(withdrawal);
   }
 
+  setCollateralOutput(output: Output): void {
+    const uOutput = output;
+    uOutput.tokens = sortTokens(uOutput.tokens);
+    this.collateralOutput = uOutput;
+    if (uOutput.plutusData) {
+      this.plutusDataList.push(uOutput.plutusData);
+    }
+  }
+
+  getCollateralOutput(): Output | undefined {
+    return this.collateralOutput;
+  }
+
+  setTotalCollateral(amount: BigNumber): void {
+    this.totalCollateral = amount;
+  }
+
+  getTotalCollateral(): BigNumber | undefined {
+    return this.totalCollateral;
+  }
+
   protected transactionBody({
     extraOutputs,
     scriptDataHash,
@@ -216,7 +240,6 @@ export class Transaction {
   }): unknown {
     const encodedBody = new Map<TransactionBodyItemType, unknown>();
     encodedBody.set(TransactionBodyItemType.INPUTS, encodeInputs(this.inputs));
-    encodedBody.set(TransactionBodyItemType.REFERENCE_INPUTS, encodeInputs(this.referenceInputs));
     let trxOutputs = this.outputs;
     if (extraOutputs && extraOutputs.length > 0) {
       trxOutputs = trxOutputs.concat(extraOutputs);
@@ -225,9 +248,6 @@ export class Transaction {
     encodedBody.set(TransactionBodyItemType.FEE, this.fee);
     if (this.ttl !== undefined) {
       encodedBody.set(TransactionBodyItemType.TTL, this.ttl);
-    }
-    if (this.validityIntervalStart !== undefined) {
-      encodedBody.set(TransactionBodyItemType.VALIDITY_INTERVAL_START, this.validityIntervalStart);
     }
     if (this.certificates.length > 0) {
       encodedBody.set(TransactionBodyItemType.CERTIFICATES, encodeCertificates(this.certificates));
@@ -240,6 +260,9 @@ export class Transaction {
       const auxiliaryDataCbor = cbors.Encoder.encode(encodedAuxiliaryData);
       const auxiliaryDataHash = hash32(auxiliaryDataCbor);
       encodedBody.set(TransactionBodyItemType.AUXILIARY_DATA_HASH, auxiliaryDataHash);
+    }
+    if (this.validityIntervalStart !== undefined) {
+      encodedBody.set(TransactionBodyItemType.VALIDITY_INTERVAL_START, this.validityIntervalStart);
     }
     if (!_.isEmpty(this.mints)) {
       encodedBody.set(TransactionBodyItemType.MINT, encodeMint(this.mints));
@@ -260,6 +283,16 @@ export class Transaction {
         requiredSigners.map((key) => Buffer.from(key, "hex"))
       );
     }
+    if (this.collateralOutput) {
+      encodedBody.set(
+        TransactionBodyItemType.COLLATERAL_OUTPUT,
+        encodeOutput(this.collateralOutput)
+      );
+    }
+    if (this.totalCollateral) {
+      encodedBody.set(TransactionBodyItemType.TOTAL_COLLATERAL, this.totalCollateral);
+    }
+    encodedBody.set(TransactionBodyItemType.REFERENCE_INPUTS, encodeInputs(this.referenceInputs));
 
     return encodedBody;
   }
