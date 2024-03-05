@@ -53,7 +53,10 @@ describe("Typhonjs", (): void => {
         const minUtxo = utils.calculateMinUtxoAmountBabbage(
           {
             address: utils.getAddressFromHex(
-              "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+              Buffer.from(
+                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                "hex"
+              )
             ),
             amount: new BigNumber(10),
             tokens: [],
@@ -68,7 +71,10 @@ describe("Typhonjs", (): void => {
         const minUtxo = utils.calculateMinUtxoAmountBabbage(
           {
             address: utils.getAddressFromHex(
-              "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+              Buffer.from(
+                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                "hex"
+              )
             ),
             amount: new BigNumber(1000000),
             tokens: [],
@@ -84,7 +90,10 @@ describe("Typhonjs", (): void => {
         const minUtxo = utils.calculateMinUtxoAmountBabbage(
           {
             address: utils.getAddressFromHex(
-              "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+              Buffer.from(
+                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                "hex"
+              )
             ),
             amount: new BigNumber(10),
             tokens,
@@ -100,7 +109,10 @@ describe("Typhonjs", (): void => {
         const minUtxo = utils.calculateMinUtxoAmountBabbage(
           {
             address: utils.getAddressFromHex(
-              "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+              Buffer.from(
+                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                "hex"
+              )
             ),
             amount: new BigNumber(10),
             tokens,
@@ -115,7 +127,10 @@ describe("Typhonjs", (): void => {
         const minUtxo = utils.calculateMinUtxoAmountBabbage(
           {
             address: utils.getAddressFromHex(
-              "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+              Buffer.from(
+                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                "hex"
+              )
             ),
             amount: new BigNumber(45000000000000000),
             tokens,
@@ -130,7 +145,10 @@ describe("Typhonjs", (): void => {
         const minUtxo = utils.calculateMinUtxoAmountBabbage(
           {
             address: utils.getAddressFromHex(
-              "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+              Buffer.from(
+                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                "hex"
+              )
             ),
             amount: new BigNumber(10),
             tokens,
@@ -146,7 +164,10 @@ describe("Typhonjs", (): void => {
         const minUtxo = utils.calculateMinUtxoAmountBabbage(
           {
             address: utils.getAddressFromHex(
-              "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+              Buffer.from(
+                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                "hex"
+              )
             ),
             amount: new BigNumber(10),
             tokens,
@@ -160,7 +181,10 @@ describe("Typhonjs", (): void => {
 
     it("get address from hex", () => {
       const address = utils.getAddressFromHex(
-        "015bb58d4a68a9504ce141aa4bff3aaceee0824434399ee56dc18ddf5a92bdd4f20d0bfbdf8a6c130cb7409fbc69700fb50e4c4603b4cc412b"
+        Buffer.from(
+          "015bb58d4a68a9504ce141aa4bff3aaceee0824434399ee56dc18ddf5a92bdd4f20d0bfbdf8a6c130cb7409fbc69700fb50e4c4603b4cc412b",
+          "hex"
+        )
       );
       expect(address instanceof CardanoAddress.BaseAddress).to.eq(true);
     });
@@ -178,7 +202,7 @@ describe("Typhonjs", (): void => {
       );
 
       expect(decoded.prefix).to.eq("addr");
-      expect(decoded.value).to.eq(
+      expect(decoded.value.toString("hex")).to.eq(
         "015bb58d4a68a9504ce141aa4bff3aaceee0824434399ee56dc18ddf5a92bdd4f20d0bfbdf8a6c130cb7409fbc69700fb50e4c4603b4cc412b"
       );
     });
@@ -225,7 +249,9 @@ describe("Typhonjs", (): void => {
       });
 
       it("paymentHash", () => {
-        expect(paymentHash).to.eq("e1aaaca245ff5ac32e4fc3010d26ac818f6c2169ee80ab0bedb800f4");
+        expect(paymentHash.toString("hex")).to.eq(
+          "e1aaaca245ff5ac32e4fc3010d26ac818f6c2169ee80ab0bedb800f4"
+        );
       });
       it("paymentHash type", () => {
         expect(hashType).to.eq(types.HashType.ADDRESS);
@@ -273,14 +299,18 @@ describe("Typhonjs", (): void => {
       });
 
       it("paymentHash", () => {
-        expect(paymentHash).to.eq("5bb58d4a68a9504ce141aa4bff3aaceee0824434399ee56dc18ddf5a");
+        expect(paymentHash.toString("hex")).to.eq(
+          "5bb58d4a68a9504ce141aa4bff3aaceee0824434399ee56dc18ddf5a"
+        );
       });
       it("paymentHash type", () => {
         expect(hashType).to.eq(types.HashType.ADDRESS);
       });
 
       it("stakeHash", () => {
-        expect(stakeHash).to.eq("92bdd4f20d0bfbdf8a6c130cb7409fbc69700fb50e4c4603b4cc412b");
+        expect(stakeHash.toString("hex")).to.eq(
+          "92bdd4f20d0bfbdf8a6c130cb7409fbc69700fb50e4c4603b4cc412b"
+        );
       });
       it("stakeHash type", () => {
         expect(stakeHashType).to.eq(types.HashType.ADDRESS);
@@ -316,7 +346,9 @@ describe("Typhonjs", (): void => {
       });
 
       it("stakeHash", () => {
-        expect(stakeHash).to.eq("92bdd4f20d0bfbdf8a6c130cb7409fbc69700fb50e4c4603b4cc412b");
+        expect(stakeHash.toString("hex")).to.eq(
+          "92bdd4f20d0bfbdf8a6c130cb7409fbc69700fb50e4c4603b4cc412b"
+        );
       });
       it("stakeHash type", () => {
         expect(stakeHashType).to.eq(types.HashType.ADDRESS);

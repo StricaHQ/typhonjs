@@ -92,105 +92,106 @@ export const calculateMinUtxoAmountBabbage = (
   return minADA;
 };
 
-export const getAddressFromHex = (hexAddress: string): CardanoAddress => {
-  const typeHex = hexAddress.toLowerCase().charAt(0);
-  const networkId = Number(hexAddress.toLowerCase().charAt(1)) as NetworkId;
+export const getAddressFromHex = (hexAddress: Buffer): CardanoAddress => {
+  const hexAddressString = hexAddress.toString("hex");
+  const typeHex = hexAddressString.toLowerCase().charAt(0);
+  const networkId = Number(hexAddressString.toLowerCase().charAt(1)) as NetworkId;
   let stakeCredential: Credential;
   let paymentCredential: Credential;
   switch (typeHex) {
     case "e":
       stakeCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.ADDRESS,
       };
       return new RewardAddress(networkId, stakeCredential);
     case "f":
       stakeCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.SCRIPT,
       };
       return new RewardAddress(networkId, stakeCredential);
     case "7": {
       paymentCredential = {
-        hash: hexAddress.slice(2),
+        hash: Buffer.from(hexAddressString.slice(2), "hex"),
         type: HashType.SCRIPT,
       };
       return new EnterpriseAddress(networkId, paymentCredential);
     }
     case "6": {
       paymentCredential = {
-        hash: hexAddress.slice(2),
+        hash: Buffer.from(hexAddressString.slice(2), "hex"),
         type: HashType.ADDRESS,
       };
       return new EnterpriseAddress(networkId, paymentCredential);
     }
     case "5": {
       paymentCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.SCRIPT,
       };
-      const vlq = hexAddress.slice(2).slice(56);
+      const vlq = hexAddressString.slice(2).slice(56);
       return new PointerAddress(networkId, paymentCredential, vlq);
     }
     case "4": {
       paymentCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.ADDRESS,
       };
-      const vlq = hexAddress.slice(2).slice(56);
+      const vlq = hexAddressString.slice(2).slice(56);
       return new PointerAddress(networkId, paymentCredential, vlq);
     }
     case "3":
       paymentCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.SCRIPT,
       };
       stakeCredential = {
-        hash: hexAddress.slice(2).slice(56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(56), "hex"),
         type: HashType.SCRIPT,
       };
       return new BaseAddress(networkId, paymentCredential, stakeCredential);
     case "2":
       paymentCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.ADDRESS,
       };
       stakeCredential = {
-        hash: hexAddress.slice(2).slice(56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(56), "hex"),
         type: HashType.SCRIPT,
       };
       return new BaseAddress(networkId, paymentCredential, stakeCredential);
     case "1":
       paymentCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.SCRIPT,
       };
       stakeCredential = {
-        hash: hexAddress.slice(2).slice(56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(56), "hex"),
         type: HashType.ADDRESS,
       };
       return new BaseAddress(networkId, paymentCredential, stakeCredential);
     case "0":
       paymentCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.ADDRESS,
       };
       stakeCredential = {
-        hash: hexAddress.slice(2).slice(56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(56), "hex"),
         type: HashType.ADDRESS,
       };
       return new BaseAddress(networkId, paymentCredential, stakeCredential);
     case "8":
-      return new ByronAddress(Buffer.from(hexAddress, "hex"));
+      return new ByronAddress(hexAddress);
     default:
       throw new Error("Unsupported address type");
   }
 };
 
-export const decodeBech32 = (bech32Address: string): { prefix: string; value: string } => {
+export const decodeBech32 = (bech32Address: string): { prefix: string; value: Buffer } => {
   const decoded = bech32.decode(bech32Address, 114);
   const decodedBech = bech32.fromWords(decoded.words);
-  const decodedAddress = Buffer.from(decodedBech).toString("hex");
+  const decodedAddress = Buffer.from(decodedBech);
   return {
     prefix: decoded.prefix,
     value: decodedAddress,

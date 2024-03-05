@@ -101,7 +101,7 @@ export class Transaction {
   addInput(input: Input): void {
     if (input.address.paymentCredential.type === HashType.ADDRESS) {
       this.requiredWitnesses.set(
-        input.address.paymentCredential.hash,
+        input.address.paymentCredential.hash.toString("hex"),
         input.address.paymentCredential.bipPath
       );
     } else if (input.address.paymentCredential.type === HashType.SCRIPT) {
@@ -137,13 +137,13 @@ export class Transaction {
   }
 
   addRequiredSigner(credential: HashCredential): void {
-    this.requiredSigners.set(credential.hash, credential.bipPath);
+    this.requiredSigners.set(credential.hash.toString("hex"), credential.bipPath);
   }
 
   addCollateral(input: CollateralInput): void {
     if (input.address.paymentCredential.type === HashType.ADDRESS) {
       this.requiredWitnesses.set(
-        input.address.paymentCredential.hash,
+        input.address.paymentCredential.hash.toString("hex"),
         input.address.paymentCredential.bipPath
       );
     }
@@ -176,14 +176,14 @@ export class Transaction {
     if (certificate.certType === CertificateType.STAKE_DELEGATION) {
       if (certificate.stakeCredential.type === HashType.ADDRESS) {
         this.requiredWitnesses.set(
-          certificate.stakeCredential.hash,
+          certificate.stakeCredential.hash.toString("hex"),
           certificate.stakeCredential.bipPath
         );
       }
     } else if (certificate.certType === CertificateType.STAKE_DE_REGISTRATION) {
       if (certificate.stakeCredential.type === HashType.ADDRESS) {
         this.requiredWitnesses.set(
-          certificate.stakeCredential.hash,
+          certificate.stakeCredential.hash.toString("hex"),
           certificate.stakeCredential.bipPath
         );
       }
@@ -203,7 +203,7 @@ export class Transaction {
   addWithdrawal(withdrawal: Withdrawal): void {
     if (withdrawal.rewardAccount.stakeCredential.type === HashType.ADDRESS) {
       this.requiredWitnesses.set(
-        withdrawal.rewardAccount.stakeCredential.hash,
+        withdrawal.rewardAccount.stakeCredential.hash.toString("hex"),
         withdrawal.rewardAccount.stakeCredential.bipPath
       );
     }

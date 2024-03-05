@@ -30,7 +30,7 @@ export enum PlutusScriptType {
 }
 
 export type HashCredential = {
-  hash: string;
+  hash: Buffer;
   type: HashType.ADDRESS;
   bipPath?: BipPath;
 };
@@ -74,7 +74,7 @@ export type PlutusScript = {
 };
 
 export type ScriptCredential = {
-  hash: string;
+  hash: Buffer;
   type: HashType.SCRIPT;
   plutusScript?: PlutusScript;
   nativeScript?: NativeScript;

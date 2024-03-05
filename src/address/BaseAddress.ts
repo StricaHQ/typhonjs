@@ -27,9 +27,9 @@ export class BaseAddress extends ShelleyTypeAddress {
       payload |= mask;
     }
     payload |= this.networkId;
-    const address = `${payload.toString(16).padStart(2, "0")}${this._paymentCredential.hash}${
-      this.stakeCredential.hash
-    }`;
+    const address = `${payload.toString(16).padStart(2, "0")}${this._paymentCredential.hash.toString("hex")}${this.stakeCredential.hash.toString(
+      "hex"
+    )}`;
     this.addressHex = address;
     this.addressBytes = Buffer.from(address, "hex");
     this.addressBech32 = this.computeBech32(this.addressBytes);

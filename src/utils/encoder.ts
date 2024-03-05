@@ -156,7 +156,7 @@ export const encodeWithdrawals = (withdrawals: Withdrawal[]): EncodedWithdrawals
 export const encodeStakeRegistrationCertificate = (
   certificate: StakeRegistrationCertificate
 ): EncodedStakeRegistrationCertificate => {
-  const stakeKeyHash: Buffer = Buffer.from(certificate.stakeCredential.hash, "hex");
+  const stakeKeyHash: Buffer = certificate.stakeCredential.hash;
   const stakeCredential: EncodedStakeCredential = [certificate.stakeCredential.type, stakeKeyHash];
   return [CertificateType.STAKE_REGISTRATION, stakeCredential];
 };
@@ -164,7 +164,7 @@ export const encodeStakeRegistrationCertificate = (
 export const encodeStakeDeRegistrationCertificate = (
   certificate: StakeDeRegistrationCertificate
 ): EncodedStakeDeRegistrationCertificate => {
-  const stakeKeyHash: Buffer = Buffer.from(certificate.stakeCredential.hash, "hex");
+  const stakeKeyHash: Buffer = certificate.stakeCredential.hash;
   const stakeCredential: EncodedStakeCredential = [certificate.stakeCredential.type, stakeKeyHash];
   return [CertificateType.STAKE_DE_REGISTRATION, stakeCredential];
 };
@@ -172,7 +172,7 @@ export const encodeStakeDeRegistrationCertificate = (
 export const encodeStakeDelegationCertificate = (
   certificate: StakeDelegationCertificate
 ): EncodedStakeDelegationCertificate => {
-  const stakeKeyHash: Buffer = Buffer.from(certificate.stakeCredential.hash, "hex");
+  const stakeKeyHash: Buffer = certificate.stakeCredential.hash;
   const stakeCredential: EncodedStakeCredential = [certificate.stakeCredential.type, stakeKeyHash];
   const poolHash = Buffer.from(certificate.poolHash, "hex");
   return [CertificateType.STAKE_DELEGATION, stakeCredential, poolHash];

@@ -20,7 +20,7 @@ export class PointerAddress extends ShelleyTypeAddress {
       payload |= mask;
     }
     payload |= this.networkId;
-    const address = `${payload.toString(16).padStart(2, "0")}${this._paymentCredential.hash}${
+    const address = `${payload.toString(16).padStart(2, "0")}${this._paymentCredential.hash.toString("hex")}${
       this._vlq
     }`;
     this.addressHex = address;
