@@ -58,16 +58,16 @@ export type EncodedWithdrawals = Map<Buffer, BigNumber>;
 export type EncodedStakeCredential = [HashType, Buffer];
 export type EncodedStakeRegistrationCertificate = [
   CertificateType.STAKE_REGISTRATION,
-  EncodedStakeCredential
+  EncodedStakeCredential,
 ];
 export type EncodedStakeDeRegistrationCertificate = [
   CertificateType.STAKE_DE_REGISTRATION,
-  EncodedStakeCredential
+  EncodedStakeCredential,
 ];
 export type EncodedStakeDelegationCertificate = [
   CertificateType.STAKE_DELEGATION,
   EncodedStakeCredential,
-  Buffer
+  Buffer,
 ];
 export type EncodedCertificate =
   | EncodedStakeRegistrationCertificate
