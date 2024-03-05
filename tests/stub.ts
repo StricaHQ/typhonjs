@@ -447,7 +447,7 @@ const address1 = new BaseAddress(NetworkId.MAINNET, paymentCred0, stakeCredentia
 const address2 = new BaseAddress(NetworkId.MAINNET, paymentCred1, stakeCredential);
 
 export const changeAddress = new BaseAddress(NetworkId.MAINNET, paymentCredChange, stakeCredential);
-export const receiverAddress = utils.getAddressFromBech32(
+export const receiverAddress = utils.getAddressFromString(
   "addr1qycq3tsm0efv9gtwdpet0r5rx6xjgezkat84jyypufnzd2uaqtd5xya2y49fx5tr68ezuew4hd04nedg4udzx8gnxlns9j9kd5"
 );
 
