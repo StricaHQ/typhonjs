@@ -292,7 +292,9 @@ export class Transaction {
     if (this.totalCollateral) {
       encodedBody.set(TransactionBodyItemType.TOTAL_COLLATERAL, this.totalCollateral);
     }
-    encodedBody.set(TransactionBodyItemType.REFERENCE_INPUTS, encodeInputs(this.referenceInputs));
+    if (!_.isEmpty(this.referenceInputs)) {
+      encodedBody.set(TransactionBodyItemType.REFERENCE_INPUTS, encodeInputs(this.referenceInputs));
+    }
 
     return encodedBody;
   }

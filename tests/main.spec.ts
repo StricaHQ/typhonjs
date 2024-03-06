@@ -387,7 +387,7 @@ describe("Typhonjs", (): void => {
         });
 
         const fee = tx.getFee().toNumber();
-        expect(fee).to.eq(242501);
+        expect(fee).to.eq(242413);
       });
 
       it("calculates fees with inline plutusData", () => {
@@ -405,7 +405,7 @@ describe("Typhonjs", (): void => {
         });
 
         const fee = tx.getFee().toNumber();
-        expect(fee).to.eq(188953);
+        expect(fee).to.eq(188865);
       });
 
       it("calculates correct fees", () => {
@@ -422,7 +422,7 @@ describe("Typhonjs", (): void => {
         });
 
         const fee = tx.getFee().toNumber();
-        expect(fee).to.eq(168405);
+        expect(fee).to.eq(168317);
       });
 
       it("calculates correct fees with tokens", () => {
@@ -439,7 +439,7 @@ describe("Typhonjs", (): void => {
         });
 
         const fee = tx.getFee().toNumber();
-        expect(fee).to.eq(177029);
+        expect(fee).to.eq(176941);
       });
 
       it("calculates correct fees with plutusDataHash", () => {
@@ -457,7 +457,7 @@ describe("Typhonjs", (): void => {
         });
 
         const fee = tx.getFee().toNumber();
-        expect(fee).to.eq(170033);
+        expect(fee).to.eq(169945);
       });
 
       it("calculates correct fees with plutusDataHash & token", () => {
@@ -475,7 +475,7 @@ describe("Typhonjs", (): void => {
         });
 
         const fee = tx.getFee().toNumber();
-        expect(fee).to.eq(178657);
+        expect(fee).to.eq(178569);
       });
 
       it("calculates correct fees with inline plutusData & token", () => {
@@ -493,7 +493,7 @@ describe("Typhonjs", (): void => {
         });
 
         const fee = tx.getFee().toNumber();
-        expect(fee).to.eq(197577);
+        expect(fee).to.eq(197489);
       });
     });
 
