@@ -4,7 +4,7 @@ import BigNumber from "bignumber.js";
 import _ = require("lodash");
 import bs58 from "bs58";
 import { bech32 } from "bech32";
-import { maxTokenAmount } from "../constants";
+import { maxAdaAmount, maxTokenAmount } from "../constants";
 import BaseAddress from "../address/BaseAddress";
 import ByronAddress from "../address/ByronAddress";
 import EnterpriseAddress from "../address/EnterpriseAddress";
@@ -18,10 +18,17 @@ import {
   CardanoAddress,
   AuxiliaryData,
   PlutusData,
+  Output,
 } from "../types";
 import RewardAddress from "../address/RewardAddress";
-import { encodeAuxiliaryData, encodePlutusData } from "./encoder";
-import { TokenBundle } from "../internal-types";
+import { encodeAuxiliaryData, encodeOutput, encodePlutusData, encodeOutputTokens } from "./encoder";
+import { EncodedAmount, TokenBundle } from "../internal-types";
+
+export const getOutputValueSize = (adaAmount: BigNumber, tokens: Array<Token>): number => {
+  const encodedAmount: EncodedAmount =
+    tokens.length > 0 ? [adaAmount, encodeOutputTokens(tokens)] : adaAmount;
+  return cbors.Encoder.encode(encodedAmount).byteLength;
+};
 
 export const calculateMinUtxoAmount = (
   tokens: Array<Token>,
@@ -75,105 +82,116 @@ export const calculateMinUtxoAmount = (
   return BigNumber.max(minUtxo, minUtxoWithTokens);
 };
 
-export const getAddressFromHex = (hexAddress: string): CardanoAddress => {
-  const typeHex = hexAddress.toLowerCase().charAt(0);
-  const networkId = Number(hexAddress.toLowerCase().charAt(1)) as NetworkId;
+export const calculateMinUtxoAmountBabbage = (
+  output: Output,
+  utxoCostPerByte: BigNumber
+): BigNumber => {
+  const minADA = new BigNumber(
+    160 + cbors.Encoder.encode(encodeOutput(output)).length
+  ).multipliedBy(utxoCostPerByte);
+  return minADA;
+};
+
+export const getAddressFromHex = (hexAddress: Buffer): CardanoAddress => {
+  const hexAddressString = hexAddress.toString("hex");
+  const typeHex = hexAddressString.toLowerCase().charAt(0);
+  const networkId = Number(hexAddressString.toLowerCase().charAt(1)) as NetworkId;
   let stakeCredential: Credential;
   let paymentCredential: Credential;
   switch (typeHex) {
     case "e":
       stakeCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.ADDRESS,
       };
       return new RewardAddress(networkId, stakeCredential);
     case "f":
       stakeCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.SCRIPT,
       };
       return new RewardAddress(networkId, stakeCredential);
     case "7": {
       paymentCredential = {
-        hash: hexAddress.slice(2),
+        hash: Buffer.from(hexAddressString.slice(2), "hex"),
         type: HashType.SCRIPT,
       };
       return new EnterpriseAddress(networkId, paymentCredential);
     }
     case "6": {
       paymentCredential = {
-        hash: hexAddress.slice(2),
+        hash: Buffer.from(hexAddressString.slice(2), "hex"),
         type: HashType.ADDRESS,
       };
       return new EnterpriseAddress(networkId, paymentCredential);
     }
     case "5": {
       paymentCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.SCRIPT,
       };
-      const vlq = hexAddress.slice(2).slice(56);
+      const vlq = hexAddressString.slice(2).slice(56);
       return new PointerAddress(networkId, paymentCredential, vlq);
     }
     case "4": {
       paymentCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.ADDRESS,
       };
-      const vlq = hexAddress.slice(2).slice(56);
+      const vlq = hexAddressString.slice(2).slice(56);
       return new PointerAddress(networkId, paymentCredential, vlq);
     }
     case "3":
       paymentCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.SCRIPT,
       };
       stakeCredential = {
-        hash: hexAddress.slice(2).slice(56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(56), "hex"),
         type: HashType.SCRIPT,
       };
       return new BaseAddress(networkId, paymentCredential, stakeCredential);
     case "2":
       paymentCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.ADDRESS,
       };
       stakeCredential = {
-        hash: hexAddress.slice(2).slice(56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(56), "hex"),
         type: HashType.SCRIPT,
       };
       return new BaseAddress(networkId, paymentCredential, stakeCredential);
     case "1":
       paymentCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.SCRIPT,
       };
       stakeCredential = {
-        hash: hexAddress.slice(2).slice(56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(56), "hex"),
         type: HashType.ADDRESS,
       };
       return new BaseAddress(networkId, paymentCredential, stakeCredential);
     case "0":
       paymentCredential = {
-        hash: hexAddress.slice(2).slice(0, 56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(0, 56), "hex"),
         type: HashType.ADDRESS,
       };
       stakeCredential = {
-        hash: hexAddress.slice(2).slice(56),
+        hash: Buffer.from(hexAddressString.slice(2).slice(56), "hex"),
         type: HashType.ADDRESS,
       };
       return new BaseAddress(networkId, paymentCredential, stakeCredential);
     case "8":
-      return new ByronAddress(Buffer.from(hexAddress, "hex"));
+      return new ByronAddress(hexAddress);
     default:
       throw new Error("Unsupported address type");
   }
 };
 
-export const decodeBech32 = (bech32Address: string): { prefix: string; value: string } => {
+export const decodeBech32 = (bech32Address: string): { prefix: string; value: Buffer } => {
   const decoded = bech32.decode(bech32Address, 114);
   const decodedBech = bech32.fromWords(decoded.words);
-  const decodedAddress = Buffer.from(decodedBech).toString("hex");
+  const decodedAddress = Buffer.from(decodedBech);
   return {
     prefix: decoded.prefix,
     value: decodedAddress,
@@ -207,24 +225,51 @@ export const getAddressFromString = (address: string): CardanoAddress => {
   }
 };
 
-export const getMaximumTokenSets = (oTokens: Array<Token>): Array<Array<Token>> => {
+export const getMaximumTokenSets = (
+  oTokens: Array<Token>,
+  maxValueSizePP: number
+): Array<Array<Token>> => {
   const tokens = _.cloneDeep(oTokens);
   const result: Array<Array<Token>> = [];
   while (tokens.length > 0) {
     const tokenArray: Array<Token> = [];
     const tokenLengthFixed = tokens.length;
     for (let i = 0; i < tokenLengthFixed; i += 1) {
-      const token = tokens.pop() as Token;
-      if (token.amount.lte(maxTokenAmount)) {
-        tokenArray.push(token);
-      } else {
-        tokenArray.push({
-          assetName: token.assetName,
-          policyId: token.policyId,
-          amount: new BigNumber(maxTokenAmount),
-        });
-        token.amount = token.amount.minus(maxTokenAmount);
-        tokens.push(token);
+      const token = tokens.shift() as Token;
+      if (token) {
+        // set default value as full token
+        let newToken = token;
+        // if the token amount is more than the max amount (int), only use max amount token
+        // add remaining amount of tokens into another output set
+        if (token.amount.gte(maxTokenAmount)) {
+          newToken = {
+            assetName: token.assetName,
+            policyId: token.policyId,
+            amount: new BigNumber(maxTokenAmount),
+          };
+        }
+
+        // calculate the current token set size
+        const tokenArrayOutputSize = getOutputValueSize(new BigNumber(maxAdaAmount), [
+          ...tokenArray,
+          newToken,
+        ]);
+
+        // only add the token to the current set if its under maxValueSize limit
+        if (tokenArrayOutputSize < maxValueSizePP) {
+          tokenArray.push(newToken);
+
+          // if the above token used in this set had max value
+          // add the remaining token amount for the next set
+          if (token.amount.gte(maxTokenAmount)) {
+            token.amount = token.amount.minus(maxTokenAmount);
+            tokens.push(token);
+          }
+        } else {
+          // add the popped token back to main list, since it didn't make it into the current set
+          tokens.push(token);
+        }
+        // while modifying this func, make sure to handle the case above, no logic must follow this line
       }
     }
     result.push(tokenArray);

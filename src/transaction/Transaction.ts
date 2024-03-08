@@ -21,9 +21,6 @@ import {
   PlutusData,
   PlutusScriptType,
   ProtocolParams,
-  TransactionBodyItemType,
-} from "../types";
-import type {
   BipPath,
   AuxiliaryData,
   Certificate,
@@ -32,6 +29,7 @@ import type {
   Withdrawal,
   Token,
   VKeyWitness,
+  ReferenceInput,
 } from "../types";
 import {
   encodeAuxiliaryData,
@@ -39,20 +37,22 @@ import {
   encodeCollaterals,
   encodeInputs,
   encodeMint,
+  encodeOutput,
   encodeOutputs,
-  encodePlutusData,
   encodeWithdrawals,
   encodeWitnesses,
 } from "../utils/encoder";
 import { hash32 } from "../utils/crypto";
-import { calculateMinUtxoAmount } from "../utils/utils";
+import { calculateMinUtxoAmountBabbage } from "../utils/utils";
 import transactionBuilder from "./transactionBuilder";
 import { paymentTransaction } from "./paymentTransaction";
+import { TransactionBodyItemType } from "../internal-types";
 
 export class Transaction {
   protected _protocolParams: ProtocolParams;
 
   protected inputs: Array<Input> = [];
+  protected referenceInputs: Array<ReferenceInput> = [];
   protected outputs: Array<Output> = [];
   protected certificates: Array<Certificate> = [];
   protected withdrawals: Array<Withdrawal> = [];
@@ -65,9 +65,12 @@ export class Transaction {
   protected nativeScriptList: Array<NativeScript> = [];
   protected auxiliaryData: AuxiliaryData | undefined;
   protected collaterals: Array<CollateralInput> = [];
+  protected collateralOutput: Output | undefined;
+  protected totalCollateral: BigNumber | undefined;
   protected requiredSigners: Map<string, BipPath | undefined> = new Map();
   protected plutusDataList: Array<PlutusData> = [];
-  protected _isPlutusTransaction = false;
+  protected _isPlutusV1Transaction = false;
+  protected _isPlutusV2Transaction = false;
   protected mints: Array<Mint> = [];
   protected validityIntervalStart: number | undefined;
 
@@ -98,16 +101,21 @@ export class Transaction {
   addInput(input: Input): void {
     if (input.address.paymentCredential.type === HashType.ADDRESS) {
       this.requiredWitnesses.set(
-        input.address.paymentCredential.hash,
+        input.address.paymentCredential.hash.toString("hex"),
         input.address.paymentCredential.bipPath
       );
     } else if (input.address.paymentCredential.type === HashType.SCRIPT) {
       if (input.address.paymentCredential.plutusScript) {
-        this._isPlutusTransaction = true;
         this.plutusScriptMap.set(
           input.address.paymentCredential.plutusScript.cborHex,
           input.address.paymentCredential.plutusScript.type
         );
+        if (input.address.paymentCredential.plutusScript.type === PlutusScriptType.PlutusScriptV1) {
+          this._isPlutusV1Transaction = true;
+        }
+        if (input.address.paymentCredential.plutusScript.type === PlutusScriptType.PlutusScriptV2) {
+          this._isPlutusV2Transaction = true;
+        }
       } else if (input.address.paymentCredential.nativeScript) {
         const nativeScript = input.address.paymentCredential.nativeScript;
         const pubKeyHashList = getPubKeyHashListFromNativeScript(nativeScript);
@@ -123,14 +131,19 @@ export class Transaction {
     this.inputs.push(input);
   }
 
+  addReferenceInput(input: ReferenceInput): void {
+    this._isPlutusV2Transaction = true;
+    this.referenceInputs.push(input);
+  }
+
   addRequiredSigner(credential: HashCredential): void {
-    this.requiredSigners.set(credential.hash, credential.bipPath);
+    this.requiredSigners.set(credential.hash.toString("hex"), credential.bipPath);
   }
 
   addCollateral(input: CollateralInput): void {
     if (input.address.paymentCredential.type === HashType.ADDRESS) {
       this.requiredWitnesses.set(
-        input.address.paymentCredential.hash,
+        input.address.paymentCredential.hash.toString("hex"),
         input.address.paymentCredential.bipPath
       );
     }
@@ -140,8 +153,14 @@ export class Transaction {
   addMint(mint: Mint): void {
     this.mints.push(mint);
     if (mint.plutusScript) {
-      this._isPlutusTransaction = true;
       this.plutusScriptMap.set(mint.plutusScript.cborHex, mint.plutusScript.type);
+
+      if (mint.plutusScript.type === PlutusScriptType.PlutusScriptV1) {
+        this._isPlutusV1Transaction = true;
+      }
+      if (mint.plutusScript.type === PlutusScriptType.PlutusScriptV2) {
+        this._isPlutusV2Transaction = true;
+      }
     } else if (mint.nativeScript) {
       // used to guesstimate fees by required pkh witnesses inside nativescript
       // this flow can be improved in future version
@@ -157,14 +176,14 @@ export class Transaction {
     if (certificate.certType === CertificateType.STAKE_DELEGATION) {
       if (certificate.stakeCredential.type === HashType.ADDRESS) {
         this.requiredWitnesses.set(
-          certificate.stakeCredential.hash,
+          certificate.stakeCredential.hash.toString("hex"),
           certificate.stakeCredential.bipPath
         );
       }
     } else if (certificate.certType === CertificateType.STAKE_DE_REGISTRATION) {
       if (certificate.stakeCredential.type === HashType.ADDRESS) {
         this.requiredWitnesses.set(
-          certificate.stakeCredential.hash,
+          certificate.stakeCredential.hash.toString("hex"),
           certificate.stakeCredential.bipPath
         );
       }
@@ -175,10 +194,6 @@ export class Transaction {
   addOutput(output: Output): void {
     const uOutput = output;
     uOutput.tokens = sortTokens(uOutput.tokens);
-    if (uOutput.plutusData) {
-      const encodedPlutusData = cbors.Encoder.encode(encodePlutusData(uOutput.plutusData));
-      uOutput.plutusDataHash = hash32(encodedPlutusData).toString("hex");
-    }
     this.outputs.push(uOutput);
     if (uOutput.plutusData) {
       this.plutusDataList.push(uOutput.plutusData);
@@ -188,11 +203,32 @@ export class Transaction {
   addWithdrawal(withdrawal: Withdrawal): void {
     if (withdrawal.rewardAccount.stakeCredential.type === HashType.ADDRESS) {
       this.requiredWitnesses.set(
-        withdrawal.rewardAccount.stakeCredential.hash,
+        withdrawal.rewardAccount.stakeCredential.hash.toString("hex"),
         withdrawal.rewardAccount.stakeCredential.bipPath
       );
     }
     this.withdrawals.push(withdrawal);
+  }
+
+  setCollateralOutput(output: Output): void {
+    const uOutput = output;
+    uOutput.tokens = sortTokens(uOutput.tokens);
+    this.collateralOutput = uOutput;
+    if (uOutput.plutusData) {
+      this.plutusDataList.push(uOutput.plutusData);
+    }
+  }
+
+  getCollateralOutput(): Output | undefined {
+    return this.collateralOutput;
+  }
+
+  setTotalCollateral(amount: BigNumber): void {
+    this.totalCollateral = amount;
+  }
+
+  getTotalCollateral(): BigNumber | undefined {
+    return this.totalCollateral;
   }
 
   protected transactionBody({
@@ -213,9 +249,6 @@ export class Transaction {
     if (this.ttl !== undefined) {
       encodedBody.set(TransactionBodyItemType.TTL, this.ttl);
     }
-    if (this.validityIntervalStart !== undefined) {
-      encodedBody.set(TransactionBodyItemType.VALIDITY_INTERVAL_START, this.validityIntervalStart);
-    }
     if (this.certificates.length > 0) {
       encodedBody.set(TransactionBodyItemType.CERTIFICATES, encodeCertificates(this.certificates));
     }
@@ -227,6 +260,9 @@ export class Transaction {
       const auxiliaryDataCbor = cbors.Encoder.encode(encodedAuxiliaryData);
       const auxiliaryDataHash = hash32(auxiliaryDataCbor);
       encodedBody.set(TransactionBodyItemType.AUXILIARY_DATA_HASH, auxiliaryDataHash);
+    }
+    if (this.validityIntervalStart !== undefined) {
+      encodedBody.set(TransactionBodyItemType.VALIDITY_INTERVAL_START, this.validityIntervalStart);
     }
     if (!_.isEmpty(this.mints)) {
       encodedBody.set(TransactionBodyItemType.MINT, encodeMint(this.mints));
@@ -246,6 +282,18 @@ export class Transaction {
         TransactionBodyItemType.REQUIRED_SIGNERS,
         requiredSigners.map((key) => Buffer.from(key, "hex"))
       );
+    }
+    if (this.collateralOutput) {
+      encodedBody.set(
+        TransactionBodyItemType.COLLATERAL_OUTPUT,
+        encodeOutput(this.collateralOutput)
+      );
+    }
+    if (this.totalCollateral) {
+      encodedBody.set(TransactionBodyItemType.TOTAL_COLLATERAL, this.totalCollateral);
+    }
+    if (!_.isEmpty(this.referenceInputs)) {
+      encodedBody.set(TransactionBodyItemType.REFERENCE_INPUTS, encodeInputs(this.referenceInputs));
     }
 
     return encodedBody;
@@ -309,8 +357,10 @@ export class Transaction {
       this.mints
     );
     const scriptDataHash = generateScriptDataHash(
+      this._protocolParams.languageView,
       encodedWitnesses,
-      this._protocolParams.languageView
+      this._isPlutusV1Transaction,
+      this._isPlutusV2Transaction
     );
     const encodedBody = this.transactionBody({ extraOutputs, scriptDataHash });
     const transaction = [
@@ -338,12 +388,8 @@ export class Transaction {
     return this.fee;
   }
 
-  calculateMinUtxoAmount(tokens: Array<Token>, hasPlutusDataHash?: boolean): BigNumber {
-    return calculateMinUtxoAmount(
-      tokens,
-      this._protocolParams.lovelacePerUtxoWord,
-      hasPlutusDataHash
-    );
+  calculateMinUtxoAmountBabbage(output: Output): BigNumber {
+    return calculateMinUtxoAmountBabbage(output, this._protocolParams.utxoCostPerByte);
   }
 
   addWitness(witness: VKeyWitness): void {
@@ -360,8 +406,10 @@ export class Transaction {
       this.mints
     );
     const scriptDataHash = generateScriptDataHash(
+      this._protocolParams.languageView,
       encodedWitnesses,
-      this._protocolParams.languageView
+      this._isPlutusV1Transaction,
+      this._isPlutusV2Transaction
     );
     const encodedBody = this.transactionBody({ scriptDataHash });
     const cborBody = cbors.Encoder.encode(encodedBody) as Buffer;
@@ -391,8 +439,10 @@ export class Transaction {
       this.mints
     );
     const scriptDataHash = generateScriptDataHash(
+      this._protocolParams.languageView,
       encodedWitnesses,
-      this._protocolParams.languageView
+      this._isPlutusV1Transaction,
+      this._isPlutusV2Transaction
     );
     const encodedBody = this.transactionBody({ scriptDataHash });
     const transaction = [
@@ -504,8 +554,10 @@ export class Transaction {
       this.mints
     );
     const scriptDataHash = generateScriptDataHash(
+      this._protocolParams.languageView,
       encodedWitnesses,
-      this._protocolParams.languageView
+      this._isPlutusV1Transaction,
+      this._isPlutusV2Transaction
     );
 
     return scriptDataHash;
@@ -597,7 +649,7 @@ export class Transaction {
   }
 
   isPlutusTransaction(): boolean {
-    return this._isPlutusTransaction;
+    return this._isPlutusV1Transaction || this._isPlutusV2Transaction;
   }
 
   /**
