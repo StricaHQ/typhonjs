@@ -102,12 +102,13 @@ export const generateScriptDataHash = (
   languageView: LanguageView,
   witnesses: EncodedWitnesses,
   isPlutusV1: boolean,
-  isPlutusV2: boolean
+  isPlutusV2: boolean,
+  isPlutusV3: boolean
 ): Buffer | undefined => {
   const encodedPlutusDataList = witnesses.get(WitnessType.PLUTUS_DATA);
   const encodedRedeemers = witnesses.get(WitnessType.REDEEMER);
-  if (isPlutusV1 || isPlutusV2) {
-    const langViewCbor = encodeLanguageViews(languageView, isPlutusV1, isPlutusV2);
+  if (isPlutusV1 || isPlutusV2 || isPlutusV3) {
+    const langViewCbor = encodeLanguageViews(languageView, isPlutusV1, isPlutusV2, isPlutusV3);
 
     const plutusDataCbor = encodedPlutusDataList?.length
       ? cbors.Encoder.encode(encodedPlutusDataList).toString("hex")
