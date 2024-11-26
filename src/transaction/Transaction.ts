@@ -41,6 +41,7 @@ import {
   encodeOutputs,
   encodeWithdrawals,
   encodeWitnesses,
+  encodeNativeScript,
 } from "../utils/encoder";
 import { hash32 } from "../utils/crypto";
 import { calculateMinUtxoAmountBabbage } from "../utils/utils";
@@ -71,6 +72,7 @@ export class Transaction {
   protected plutusDataList: Array<PlutusData> = [];
   protected _isPlutusV1Transaction = false;
   protected _isPlutusV2Transaction = false;
+  protected _isPlutusV3Transaction = false;
   protected mints: Array<Mint> = [];
   protected validityIntervalStart: number | undefined;
 
@@ -116,6 +118,9 @@ export class Transaction {
         if (input.address.paymentCredential.plutusScript.type === PlutusScriptType.PlutusScriptV2) {
           this._isPlutusV2Transaction = true;
         }
+        if (input.address.paymentCredential.plutusScript.type === PlutusScriptType.PlutusScriptV3) {
+          this._isPlutusV3Transaction = true;
+        }
       } else if (input.address.paymentCredential.nativeScript) {
         const nativeScript = input.address.paymentCredential.nativeScript;
         const pubKeyHashList = getPubKeyHashListFromNativeScript(nativeScript);
@@ -132,7 +137,21 @@ export class Transaction {
   }
 
   addReferenceInput(input: ReferenceInput): void {
-    this._isPlutusV2Transaction = true;
+    if (
+      input.address &&
+      input.address.paymentCredential.type === HashType.SCRIPT &&
+      input.address.paymentCredential.plutusScript
+    ) {
+      if (input.address.paymentCredential.plutusScript.type === PlutusScriptType.PlutusScriptV1) {
+        this._isPlutusV1Transaction = true;
+      }
+      if (input.address.paymentCredential.plutusScript.type === PlutusScriptType.PlutusScriptV2) {
+        this._isPlutusV2Transaction = true;
+      }
+      if (input.address.paymentCredential.plutusScript.type === PlutusScriptType.PlutusScriptV3) {
+        this._isPlutusV3Transaction = true;
+      }
+    }
     this.referenceInputs.push(input);
   }
 
@@ -160,6 +179,9 @@ export class Transaction {
       }
       if (mint.plutusScript.type === PlutusScriptType.PlutusScriptV2) {
         this._isPlutusV2Transaction = true;
+      }
+      if (mint.plutusScript.type === PlutusScriptType.PlutusScriptV3) {
+        this._isPlutusV3Transaction = true;
       }
     } else if (mint.nativeScript) {
       // used to guesstimate fees by required pkh witnesses inside nativescript
@@ -329,6 +351,53 @@ export class Transaction {
     return memPrice.plus(stepsPrice).integerValue(BigNumber.ROUND_CEIL);
   }
 
+  private calculateRefScriptFee(): number {
+    const sizeIncrement = 25600;
+    const multiplier = 1.2;
+    const minFeeRefScriptCostPerByte = this._protocolParams.minFeeRefScriptCostPerByte;
+
+    const calculate = (acc: number, curTierPrice: number, size: number): number => {
+      if (size < sizeIncrement) {
+        return Math.floor(acc + size * curTierPrice);
+      }
+      const acc_ = acc + curTierPrice * sizeIncrement;
+      return calculate(acc_, multiplier * curTierPrice, size - sizeIncrement);
+    };
+
+    const getNSSize = (nativeScript: NativeScript): number => {
+      const encodedNativeScript = cbors.Encoder.encode(encodeNativeScript(nativeScript));
+      return encodedNativeScript.length;
+    };
+
+    const getPSSize = (plutusScriptHex: string): number => {
+      return Buffer.from(plutusScriptHex, "hex").length;
+    };
+
+    let totalRefScriptSize = 0;
+    for (const input of this.inputs) {
+      if (input.nativeScript) {
+        totalRefScriptSize += getNSSize(input.nativeScript);
+      }
+      if (input.plutusScript) {
+        totalRefScriptSize += getPSSize(input.plutusScript.cborHex);
+      }
+    }
+
+    for (const input of this.referenceInputs) {
+      if (input.nativeScript) {
+        totalRefScriptSize += getNSSize(input.nativeScript);
+      }
+      if (input.plutusScript) {
+        totalRefScriptSize += getPSSize(input.plutusScript.cborHex);
+      }
+    }
+
+    if (totalRefScriptSize > 0) {
+      return calculate(0, minFeeRefScriptCostPerByte, totalRefScriptSize);
+    }
+    return 0;
+  }
+
   calculateTxSize(extraOutputs?: Array<Output>): number {
     const combinedRequiredWitnesses: Map<string, BipPath | undefined> = new Map();
     for (const [key, value] of this.requiredNativeScriptWitnesses.entries()) {
@@ -360,7 +429,8 @@ export class Transaction {
       this._protocolParams.languageView,
       encodedWitnesses,
       this._isPlutusV1Transaction,
-      this._isPlutusV2Transaction
+      this._isPlutusV2Transaction,
+      this._isPlutusV3Transaction
     );
     const encodedBody = this.transactionBody({ extraOutputs, scriptDataHash });
     const transaction = [
@@ -377,7 +447,9 @@ export class Transaction {
     const txSize = this.calculateTxSize(extraOutputs);
     const txFee = this.transactionFee(txSize);
     const contractFee = this.contractFee();
-    return txFee.plus(contractFee);
+    // introduced in Conway era
+    const refScriptFee = this.calculateRefScriptFee();
+    return txFee.plus(contractFee).plus(refScriptFee);
   }
 
   setFee(fee: BigNumber): void {
@@ -409,7 +481,8 @@ export class Transaction {
       this._protocolParams.languageView,
       encodedWitnesses,
       this._isPlutusV1Transaction,
-      this._isPlutusV2Transaction
+      this._isPlutusV2Transaction,
+      this._isPlutusV3Transaction
     );
     const encodedBody = this.transactionBody({ scriptDataHash });
     const cborBody = cbors.Encoder.encode(encodedBody) as Buffer;
@@ -442,7 +515,8 @@ export class Transaction {
       this._protocolParams.languageView,
       encodedWitnesses,
       this._isPlutusV1Transaction,
-      this._isPlutusV2Transaction
+      this._isPlutusV2Transaction,
+      this._isPlutusV3Transaction
     );
     const encodedBody = this.transactionBody({ scriptDataHash });
     const transaction = [
@@ -557,7 +631,8 @@ export class Transaction {
       this._protocolParams.languageView,
       encodedWitnesses,
       this._isPlutusV1Transaction,
-      this._isPlutusV2Transaction
+      this._isPlutusV2Transaction,
+      this._isPlutusV3Transaction
     );
 
     return scriptDataHash;
@@ -649,7 +724,9 @@ export class Transaction {
   }
 
   isPlutusTransaction(): boolean {
-    return this._isPlutusV1Transaction || this._isPlutusV2Transaction;
+    return (
+      this._isPlutusV1Transaction || this._isPlutusV2Transaction || this._isPlutusV3Transaction
+    );
   }
 
   /**

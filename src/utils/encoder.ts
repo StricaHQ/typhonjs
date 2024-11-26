@@ -124,6 +124,8 @@ export const encodeOutput = (output: Output): EncodedOutput => {
       refScript = [1, Buffer.from(output.plutusScript.cborHex, "hex")];
     } else if (output.plutusScript.type === PlutusScriptType.PlutusScriptV2) {
       refScript = [2, Buffer.from(output.plutusScript.cborHex, "hex")];
+    } else if (output.plutusScript.type === PlutusScriptType.PlutusScriptV3) {
+      refScript = [3, Buffer.from(output.plutusScript.cborHex, "hex")];
     }
   } else if (output.nativeScript) {
     const encodedNativeScript = cbors.Encoder.encode(encodeNativeScript(output.nativeScript));
@@ -399,23 +401,15 @@ export const encodePlutusData = (plutusData: PlutusData): EncodedPlutusData => {
 export const encodeLanguageViews = (
   languageView: LanguageView,
   plutusV1: boolean,
-  plutusV2: boolean
+  plutusV2: boolean,
+  plutusV3: boolean
 ): string => {
   const encodedLanguageView = new Map();
 
   if (plutusV1) {
     // The encoding is Plutus V1 Specific
-    const costMdls = _(languageView.PlutusScriptV1)
-      .map((value, key) => ({
-        key,
-        value,
-      }))
-      .orderBy(["key"], ["asc"])
-      .map((item) => item.value)
-      .value();
-
     // indefinite array encoding
-    const indefCostMdls = cbors.IndefiniteArray.from(costMdls);
+    const indefCostMdls = cbors.IndefiniteArray.from(languageView.PlutusScriptV1);
 
     // for V1, encode values before adding to view map
     const cborCostMdls = cbors.Encoder.encode(indefCostMdls);
@@ -425,17 +419,10 @@ export const encodeLanguageViews = (
   }
   if (plutusV2) {
     // The encoding is Plutus V2 Specific
-    const costMdls = _(languageView.PlutusScriptV1)
-      .map((value, key) => ({
-        key,
-        value,
-      }))
-      .orderBy(["key"], ["asc"])
-      .map((item) => item.value)
-      .value();
-
-    // Plutus V2
-    encodedLanguageView.set(1, costMdls);
+    encodedLanguageView.set(1, languageView.PlutusScriptV2);
+  }
+  if (plutusV3) {
+    encodedLanguageView.set(2, languageView.PlutusScriptV3);
   }
 
   return cbors.Encoder.encode(encodedLanguageView).toString("hex");
