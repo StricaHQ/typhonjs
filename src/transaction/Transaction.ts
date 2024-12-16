@@ -194,6 +194,12 @@ export class Transaction {
     }
   }
 
+  /**
+   * The method will add a certificate to the transaction to be included in cbor
+   * This method will automatically scan and include each unique required witnesses in the map
+   * to help sign the transaction
+   * @param certificate a certificate to include in the transaction
+   */
   addCertificate(certificate: Certificate): void {
     switch (certificate.type) {
       case CertificateType.STAKE_DELEGATION: {
@@ -774,6 +780,12 @@ export class Transaction {
     };
   }
 
+  /**
+   * This method scans the certificates added in the transaction to calculate
+   * additional ADA required for transaction validity. Essentially ADA to be used
+   * in the deposit for stake key registration etc.
+   * @returns additional ADA required for a valid transaction
+   */
   getAdditionalOutputAda(): BigNumber {
     return _.reduce(
       this.certificates,
