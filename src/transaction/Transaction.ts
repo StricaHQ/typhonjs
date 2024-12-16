@@ -802,6 +802,12 @@ export class Transaction {
     );
   }
 
+  /**
+   * This method scans the certificates added in the transaction to calculate
+   * additional ADA available in inputs as part of the deposit refund.
+   * Essentially ADA to be considered as additional input deu to deposit refunds.
+   * @returns additional ADA available as input
+   */
   getAdditionalInputAda(): BigNumber {
     const certDeposit = _.reduce(
       this.certificates,
