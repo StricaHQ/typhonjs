@@ -45,8 +45,8 @@ import {
 } from "../utils/encoder";
 import { hash32 } from "../utils/crypto";
 import { calculateMinUtxoAmountBabbage } from "../utils/utils";
-import transactionBuilder from "./transactionBuilder";
-import { paymentTransaction } from "./paymentTransaction";
+import transactionBuilder from "./helpers/transactionBuilder";
+import { paymentTransaction } from "./helpers/paymentTransaction";
 import { TransactionBodyItemType } from "../internal-types";
 
 export class Transaction {
@@ -194,22 +194,135 @@ export class Transaction {
     }
   }
 
+  /**
+   * The method will add a certificate to the transaction to be included in cbor
+   * This method will automatically scan and include each unique required witnesses in the map
+   * to help sign the transaction
+   * @param certificate a certificate to include in the transaction
+   */
   addCertificate(certificate: Certificate): void {
-    if (certificate.certType === CertificateType.STAKE_DELEGATION) {
-      if (certificate.stakeCredential.type === HashType.ADDRESS) {
-        this.requiredWitnesses.set(
-          certificate.stakeCredential.hash.toString("hex"),
-          certificate.stakeCredential.bipPath
-        );
+    switch (certificate.type) {
+      case CertificateType.STAKE_DELEGATION: {
+        if (certificate.cert.stakeCredential.type === HashType.ADDRESS) {
+          this.requiredWitnesses.set(
+            certificate.cert.stakeCredential.hash.toString("hex"),
+            certificate.cert.stakeCredential.bipPath
+          );
+        }
+        break;
       }
-    } else if (certificate.certType === CertificateType.STAKE_DE_REGISTRATION) {
-      if (certificate.stakeCredential.type === HashType.ADDRESS) {
-        this.requiredWitnesses.set(
-          certificate.stakeCredential.hash.toString("hex"),
-          certificate.stakeCredential.bipPath
-        );
+      case CertificateType.STAKE_REGISTRATION: {
+        if (certificate.cert.stakeCredential.type === HashType.ADDRESS) {
+          this.requiredWitnesses.set(
+            certificate.cert.stakeCredential.hash.toString("hex"),
+            certificate.cert.stakeCredential.bipPath
+          );
+        }
+        break;
       }
+      case CertificateType.STAKE_DE_REGISTRATION: {
+        if (certificate.cert.stakeCredential.type === HashType.ADDRESS) {
+          this.requiredWitnesses.set(
+            certificate.cert.stakeCredential.hash.toString("hex"),
+            certificate.cert.stakeCredential.bipPath
+          );
+        }
+        break;
+      }
+      case CertificateType.STAKE_KEY_REGISTRATION: {
+        if (certificate.cert.stakeCredential.type === HashType.ADDRESS) {
+          this.requiredWitnesses.set(
+            certificate.cert.stakeCredential.hash.toString("hex"),
+            certificate.cert.stakeCredential.bipPath
+          );
+        }
+        break;
+      }
+      case CertificateType.STAKE_KEY_DE_REGISTRATION: {
+        if (certificate.cert.stakeCredential.type === HashType.ADDRESS) {
+          this.requiredWitnesses.set(
+            certificate.cert.stakeCredential.hash.toString("hex"),
+            certificate.cert.stakeCredential.bipPath
+          );
+        }
+        break;
+      }
+      case CertificateType.VOTE_DELEGATION: {
+        if (certificate.cert.stakeCredential.type === HashType.ADDRESS) {
+          this.requiredWitnesses.set(
+            certificate.cert.stakeCredential.hash.toString("hex"),
+            certificate.cert.stakeCredential.bipPath
+          );
+        }
+        break;
+      }
+      case CertificateType.STAKE_VOTE_DELEG: {
+        if (certificate.cert.stakeCredential.type === HashType.ADDRESS) {
+          this.requiredWitnesses.set(
+            certificate.cert.stakeCredential.hash.toString("hex"),
+            certificate.cert.stakeCredential.bipPath
+          );
+        }
+        break;
+      }
+      case CertificateType.STAKE_REG_DELEG: {
+        if (certificate.cert.stakeCredential.type === HashType.ADDRESS) {
+          this.requiredWitnesses.set(
+            certificate.cert.stakeCredential.hash.toString("hex"),
+            certificate.cert.stakeCredential.bipPath
+          );
+        }
+        break;
+      }
+      case CertificateType.VOTE_REG_DELEG: {
+        if (certificate.cert.stakeCredential.type === HashType.ADDRESS) {
+          this.requiredWitnesses.set(
+            certificate.cert.stakeCredential.hash.toString("hex"),
+            certificate.cert.stakeCredential.bipPath
+          );
+        }
+        break;
+      }
+      case CertificateType.STAKE_VOTE_REG_DELEG: {
+        if (certificate.cert.stakeCredential.type === HashType.ADDRESS) {
+          this.requiredWitnesses.set(
+            certificate.cert.stakeCredential.hash.toString("hex"),
+            certificate.cert.stakeCredential.bipPath
+          );
+        }
+        break;
+      }
+      case CertificateType.DREP_REG: {
+        if (certificate.cert.dRepCredential.type === HashType.ADDRESS) {
+          this.requiredWitnesses.set(
+            certificate.cert.dRepCredential.hash.toString("hex"),
+            certificate.cert.dRepCredential.bipPath
+          );
+        }
+        break;
+      }
+      case CertificateType.DREP_DE_REG: {
+        if (certificate.cert.dRepCredential.type === HashType.ADDRESS) {
+          this.requiredWitnesses.set(
+            certificate.cert.dRepCredential.hash.toString("hex"),
+            certificate.cert.dRepCredential.bipPath
+          );
+        }
+        break;
+      }
+      case CertificateType.DREP_UPDATE: {
+        if (certificate.cert.dRepCredential.type === HashType.ADDRESS) {
+          this.requiredWitnesses.set(
+            certificate.cert.dRepCredential.hash.toString("hex"),
+            certificate.cert.dRepCredential.bipPath
+          );
+        }
+        break;
+      }
+      default:
+        break;
     }
+
     this.certificates.push(certificate);
   }
 
@@ -667,11 +780,20 @@ export class Transaction {
     };
   }
 
+  /**
+   * This method scans the certificates added in the transaction to calculate
+   * additional ADA required for transaction validity. Essentially ADA to be used
+   * in the deposit for stake key registration etc.
+   * @returns additional ADA required for a valid transaction
+   */
   getAdditionalOutputAda(): BigNumber {
     return _.reduce(
       this.certificates,
       (result, cert) => {
-        if (cert.certType === CertificateType.STAKE_REGISTRATION) {
+        if (cert.type === CertificateType.STAKE_REGISTRATION) {
+          return result.plus(this._protocolParams.stakeKeyDeposit);
+        }
+        if (cert.type === CertificateType.STAKE_KEY_REGISTRATION) {
           return result.plus(this._protocolParams.stakeKeyDeposit);
         }
         return result;
@@ -680,11 +802,20 @@ export class Transaction {
     );
   }
 
+  /**
+   * This method scans the certificates added in the transaction to calculate
+   * additional ADA available in inputs as part of the deposit refund.
+   * Essentially ADA to be considered as additional input deu to deposit refunds.
+   * @returns additional ADA available as input
+   */
   getAdditionalInputAda(): BigNumber {
     const certDeposit = _.reduce(
       this.certificates,
       (result, cert) => {
-        if (cert.certType === CertificateType.STAKE_DE_REGISTRATION) {
+        if (cert.type === CertificateType.STAKE_DE_REGISTRATION) {
+          return result.plus(this._protocolParams.stakeKeyDeposit);
+        }
+        if (cert.type === CertificateType.STAKE_KEY_DE_REGISTRATION) {
           return result.plus(this._protocolParams.stakeKeyDeposit);
         }
         return result;
