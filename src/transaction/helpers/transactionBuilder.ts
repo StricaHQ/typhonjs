@@ -1,13 +1,13 @@
 import BigNumber from "bignumber.js";
 import _ = require("lodash");
-import { CardanoAddress, Input, Output, CollateralInput } from "../types";
-import { getTokenDiff } from "../utils/helpers";
+import { CardanoAddress, Input, Output, CollateralInput } from "../../types";
+import { getTokenDiff } from "../../utils/helpers";
 import {
   calculateMinUtxoAmountBabbage,
   getAddressFromHex,
   getMaximumTokenSets,
-} from "../utils/utils";
-import Transaction from "./Transaction";
+} from "../../utils/utils";
+import Transaction from "../Transaction";
 
 export function transactionBuilder({
   transaction,

@@ -1,5 +1,5 @@
-import Transaction from "./Transaction";
-import { CardanoAddress, Output, Input, ProtocolParams, AuxiliaryData } from "../types";
+import Transaction from "../Transaction";
+import { CardanoAddress, Output, Input, ProtocolParams, AuxiliaryData } from "../../types";
 
 export const paymentTransaction = ({
   inputs,

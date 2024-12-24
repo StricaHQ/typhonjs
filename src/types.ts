@@ -87,6 +87,18 @@ export enum CertificateType {
   STAKE_REGISTRATION = 0,
   STAKE_DE_REGISTRATION = 1,
   STAKE_DELEGATION = 2,
+  STAKE_KEY_REGISTRATION = 7,
+  STAKE_KEY_DE_REGISTRATION = 8,
+  VOTE_DELEGATION = 9,
+  STAKE_VOTE_DELEG = 10,
+  STAKE_REG_DELEG = 11,
+  VOTE_REG_DELEG = 12,
+  STAKE_VOTE_REG_DELEG = 13,
+  COMMITTEE_AUTH_HOT = 14,
+  COMMITTEE_RESIGN_COLD = 15,
+  DREP_REG = 16,
+  DREP_DE_REG = 17,
+  DREP_UPDATE = 18,
 }
 
 export enum WitnessType {
@@ -162,20 +174,145 @@ export type Output = {
   nativeScript?: NativeScript;
 };
 
+export enum DRepType {
+  ADDRESS = 0,
+  SCRIPT = 1,
+  ABSTAIN = 2,
+  NO_CONFIDENCE = 3,
+}
+
+export type DRep = {
+  type: DRepType;
+  key: Buffer | undefined;
+};
+
+export type Anchor = {
+  url: string;
+  hash: Buffer;
+};
+
 export type StakeRegistrationCertificate = {
-  certType: CertificateType.STAKE_REGISTRATION;
-  stakeCredential: Credential;
+  type: CertificateType.STAKE_REGISTRATION;
+  cert: {
+    stakeCredential: Credential;
+  };
 };
 
 export type StakeDeRegistrationCertificate = {
-  certType: CertificateType.STAKE_DE_REGISTRATION;
-  stakeCredential: Credential;
+  type: CertificateType.STAKE_DE_REGISTRATION;
+  cert: {
+    stakeCredential: Credential;
+  };
 };
 
 export type StakeDelegationCertificate = {
-  certType: CertificateType.STAKE_DELEGATION;
-  stakeCredential: Credential;
-  poolHash: string;
+  type: CertificateType.STAKE_DELEGATION;
+  cert: {
+    stakeCredential: Credential;
+    poolHash: string;
+  };
+};
+
+export type StakeKeyRegistrationCertificate = {
+  type: CertificateType.STAKE_KEY_REGISTRATION;
+  cert: {
+    stakeCredential: Credential;
+    deposit: BigNumber;
+  };
+};
+
+export type StakeKeyDeRegistrationCertificate = {
+  type: CertificateType.STAKE_KEY_DE_REGISTRATION;
+  cert: {
+    stakeCredential: Credential;
+    deposit: BigNumber;
+  };
+};
+
+export type VoteDelegationCertificate = {
+  type: CertificateType.VOTE_DELEGATION;
+  cert: {
+    stakeCredential: Credential;
+    dRep: DRep;
+  };
+};
+
+export type StakeVoteDelegationCertificate = {
+  type: CertificateType.STAKE_VOTE_DELEG;
+  cert: {
+    stakeCredential: Credential;
+    poolKeyHash: Buffer;
+    dRep: DRep;
+  };
+};
+
+export type StakeRegDelegationCertificate = {
+  type: CertificateType.STAKE_REG_DELEG;
+  cert: {
+    stakeCredential: Credential;
+    poolKeyHash: Buffer;
+    deposit: BigNumber;
+  };
+};
+
+export type VoteRegDelegationCertificate = {
+  type: CertificateType.VOTE_REG_DELEG;
+  cert: {
+    stakeCredential: Credential;
+    dRep: DRep;
+    deposit: BigNumber;
+  };
+};
+
+export type StakeVoteRegDelegationCertificate = {
+  type: CertificateType.STAKE_VOTE_REG_DELEG;
+  cert: {
+    stakeCredential: Credential;
+    poolKeyHash: Buffer;
+    dRep: DRep;
+    deposit: BigNumber;
+  };
+};
+
+export type CommitteeAuthHotCertificate = {
+  type: CertificateType.COMMITTEE_AUTH_HOT;
+  cert: {
+    coldCredential: Credential;
+    hotCredential: Credential;
+  };
+};
+
+export type CommitteeResignColdCertificate = {
+  type: CertificateType.COMMITTEE_RESIGN_COLD;
+  cert: {
+    coldCredential: Credential;
+    anchor: Anchor | null;
+  };
+};
+
+export type DRepRegCertificate = {
+  type: CertificateType.DREP_REG;
+  cert: {
+    dRepCredential: Credential;
+    deposit: BigNumber;
+    anchor: Anchor | null;
+  };
+};
+
+export type DRepDeRegCertificate = {
+  type: CertificateType.DREP_DE_REG;
+  cert: {
+    dRepCredential: Credential;
+    deposit: BigNumber;
+  };
+};
+
+export type DRepUpdateCertificate = {
+  type: CertificateType.DREP_UPDATE;
+  cert: {
+    dRepCredential: Credential;
+    anchor: Anchor | null;
+  };
 };
 
 export type Withdrawal = {
@@ -186,7 +323,19 @@ export type Withdrawal = {
 export type Certificate =
   | StakeRegistrationCertificate
   | StakeDeRegistrationCertificate
-  | StakeDelegationCertificate;
+  | StakeDelegationCertificate
+  | StakeKeyRegistrationCertificate
+  | StakeKeyDeRegistrationCertificate
+  | VoteDelegationCertificate
+  | StakeVoteDelegationCertificate
+  | StakeRegDelegationCertificate
+  | VoteRegDelegationCertificate
+  | StakeVoteRegDelegationCertificate
+  | CommitteeAuthHotCertificate
+  | CommitteeResignColdCertificate
+  | DRepRegCertificate
+  | DRepDeRegCertificate
+  | DRepUpdateCertificate;
 
 export type VKeyWitness = {
   publicKey: Buffer;

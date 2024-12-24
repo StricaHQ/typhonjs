@@ -26,6 +26,22 @@ import {
   NativeScript,
   Mint,
   ReferenceInput,
+  StakeKeyRegistrationCertificate,
+  StakeKeyDeRegistrationCertificate,
+  VoteDelegationCertificate,
+  DRep,
+  DRepType,
+  StakeVoteDelegationCertificate,
+  StakeRegDelegationCertificate,
+  VoteRegDelegationCertificate,
+  StakeVoteRegDelegationCertificate,
+  CommitteeAuthHotCertificate,
+  CommitteeResignColdCertificate,
+  Anchor,
+  DRepRegCertificate,
+  Credential,
+  DRepDeRegCertificate,
+  DRepUpdateCertificate,
 } from "../types";
 import { sanitizeMetadata } from "./helpers";
 import { hash32 } from "./crypto";
@@ -38,7 +54,7 @@ import {
   EncodedOutput,
   EncodedPlutusScript,
   EncodedRedeemer,
-  EncodedStakeCredential,
+  EncodedCredential,
   EncodedStakeDelegationCertificate,
   EncodedStakeDeRegistrationCertificate,
   EncodedStakeRegistrationCertificate,
@@ -50,6 +66,20 @@ import {
   EncodedNativeScript,
   TokenBundle,
   OutputItemType,
+  EncodedStakeKeyRegistrationCertificate,
+  EncodedStakeKeyDeRegistrationCertificate,
+  EncodedVoteDelegationCertificate,
+  EncodedDRep,
+  EncodedStakeVoteDelegationCertificate,
+  EncodedStakeRegDelegationCertificate,
+  EncodedVoteRegDelegationCertificate,
+  EncodedStakeVoteRegDelegationCertificate,
+  EncodedCommitteeAuthHotCertificate,
+  EncodedCommitteeResignColdCertificate,
+  EncodedAnchor,
+  EncodedDRepRegCertificate,
+  EncodedDRepDeRegCertificate,
+  EncodedDRepUpdateCertificate,
 } from "../internal-types";
 
 export const encodeInputs = (inputs: Array<Input | ReferenceInput>): Array<EncodedInput> => {
@@ -155,45 +185,253 @@ export const encodeWithdrawals = (withdrawals: Withdrawal[]): EncodedWithdrawals
   return encodedWithdrawals;
 };
 
+export const encodeDRep = (drep: DRep): EncodedDRep => {
+  let encodedDRep: EncodedDRep;
+  switch (drep.type) {
+    case DRepType.ADDRESS:
+      encodedDRep = [0, drep.key as Buffer];
+      break;
+    case DRepType.SCRIPT:
+      encodedDRep = [1, drep.key as Buffer];
+      break;
+    case DRepType.ABSTAIN:
+      encodedDRep = [2];
+      break;
+    case DRepType.NO_CONFIDENCE:
+      encodedDRep = [3];
+      break;
+    default:
+      throw new Error("Invalid DRep type");
+  }
+  return encodedDRep;
+};
+
+export const encodeAnchor = (anchor: Anchor | null): EncodedAnchor => {
+  if (anchor) {
+    return [anchor.url, anchor.hash];
+  }
+  return null;
+};
+
+export const encodeCredential = (credential: Credential): EncodedCredential => {
+  const encodedCredential: EncodedCredential = [credential.type, credential.hash];
+  return encodedCredential;
+};
+
 export const encodeStakeRegistrationCertificate = (
   certificate: StakeRegistrationCertificate
 ): EncodedStakeRegistrationCertificate => {
-  const stakeKeyHash: Buffer = certificate.stakeCredential.hash;
-  const stakeCredential: EncodedStakeCredential = [certificate.stakeCredential.type, stakeKeyHash];
-  return [CertificateType.STAKE_REGISTRATION, stakeCredential];
+  const encodedStakeCredential = encodeCredential(certificate.cert.stakeCredential);
+  return [CertificateType.STAKE_REGISTRATION, encodedStakeCredential];
 };
 
 export const encodeStakeDeRegistrationCertificate = (
   certificate: StakeDeRegistrationCertificate
 ): EncodedStakeDeRegistrationCertificate => {
-  const stakeKeyHash: Buffer = certificate.stakeCredential.hash;
-  const stakeCredential: EncodedStakeCredential = [certificate.stakeCredential.type, stakeKeyHash];
-  return [CertificateType.STAKE_DE_REGISTRATION, stakeCredential];
+  const encodedStakeCredential = encodeCredential(certificate.cert.stakeCredential);
+  return [CertificateType.STAKE_DE_REGISTRATION, encodedStakeCredential];
 };
 
 export const encodeStakeDelegationCertificate = (
   certificate: StakeDelegationCertificate
 ): EncodedStakeDelegationCertificate => {
-  const stakeKeyHash: Buffer = certificate.stakeCredential.hash;
-  const stakeCredential: EncodedStakeCredential = [certificate.stakeCredential.type, stakeKeyHash];
-  const poolHash = Buffer.from(certificate.poolHash, "hex");
-  return [CertificateType.STAKE_DELEGATION, stakeCredential, poolHash];
+  const encodedStakeCredential = encodeCredential(certificate.cert.stakeCredential);
+  const poolHash = Buffer.from(certificate.cert.poolHash, "hex");
+  return [CertificateType.STAKE_DELEGATION, encodedStakeCredential, poolHash];
+};
+
+export const encodeStakeKeyRegistrationCertificate = (
+  certificate: StakeKeyRegistrationCertificate
+): EncodedStakeKeyRegistrationCertificate => {
+  const encodedStakeCredential = encodeCredential(certificate.cert.stakeCredential);
+  return [CertificateType.STAKE_KEY_REGISTRATION, encodedStakeCredential, certificate.cert.deposit];
+};
+
+export const encodeStakeKeyDeRegistrationCertificate = (
+  certificate: StakeKeyDeRegistrationCertificate
+): EncodedStakeKeyDeRegistrationCertificate => {
+  const encodedStakeCredential = encodeCredential(certificate.cert.stakeCredential);
+  return [
+    CertificateType.STAKE_KEY_DE_REGISTRATION,
+    encodedStakeCredential,
+    certificate.cert.deposit,
+  ];
+};
+
+export const encodeVoteDelegationCertificate = (
+  certificate: VoteDelegationCertificate
+): EncodedVoteDelegationCertificate => {
+  const encodedStakeCredential = encodeCredential(certificate.cert.stakeCredential);
+  const encodedDRep = encodeDRep(certificate.cert.dRep);
+  return [CertificateType.VOTE_DELEGATION, encodedStakeCredential, encodedDRep];
+};
+
+export const encodeStakeVoteDelegationCertificate = (
+  certificate: StakeVoteDelegationCertificate
+): EncodedStakeVoteDelegationCertificate => {
+  const encodedStakeCredential = encodeCredential(certificate.cert.stakeCredential);
+  const encodedDRep = encodeDRep(certificate.cert.dRep);
+  return [
+    CertificateType.STAKE_VOTE_DELEG,
+    encodedStakeCredential,
+    certificate.cert.poolKeyHash,
+    encodedDRep,
+  ];
+};
+
+export const encodeStakeRegDelegationCertificate = (
+  certificate: StakeRegDelegationCertificate
+): EncodedStakeRegDelegationCertificate => {
+  const encodedStakeCredential = encodeCredential(certificate.cert.stakeCredential);
+  return [
+    CertificateType.STAKE_REG_DELEG,
+    encodedStakeCredential,
+    certificate.cert.poolKeyHash,
+    certificate.cert.deposit,
+  ];
+};
+
+export const encodeVoteRegDelegationCertificate = (
+  certificate: VoteRegDelegationCertificate
+): EncodedVoteRegDelegationCertificate => {
+  const encodedStakeCredential = encodeCredential(certificate.cert.stakeCredential);
+  const encodedDRep = encodeDRep(certificate.cert.dRep);
+  return [
+    CertificateType.VOTE_REG_DELEG,
+    encodedStakeCredential,
+    encodedDRep,
+    certificate.cert.deposit,
+  ];
+};
+
+export const encodeStakeVoteRegDelegationCertificate = (
+  certificate: StakeVoteRegDelegationCertificate
+): EncodedStakeVoteRegDelegationCertificate => {
+  const encodedStakeCredential = encodeCredential(certificate.cert.stakeCredential);
+  const encodedDRep = encodeDRep(certificate.cert.dRep);
+  return [
+    CertificateType.STAKE_VOTE_REG_DELEG,
+    encodedStakeCredential,
+    certificate.cert.poolKeyHash,
+    encodedDRep,
+    certificate.cert.deposit,
+  ];
+};
+
+export const encodeCommitteeAuthHotCertificate = (
+  certificate: CommitteeAuthHotCertificate
+): EncodedCommitteeAuthHotCertificate => {
+  const encodedCommitteeColdCred = encodeCredential(certificate.cert.coldCredential);
+  const encodedCommitteeHotCred = encodeCredential(certificate.cert.hotCredential);
+
+  return [CertificateType.COMMITTEE_AUTH_HOT, encodedCommitteeColdCred, encodedCommitteeHotCred];
+};
+
+export const encodeCommitteeResignColdCertificate = (
+  certificate: CommitteeResignColdCertificate
+): EncodedCommitteeResignColdCertificate => {
+  const encodedCommitteeColdCred = encodeCredential(certificate.cert.coldCredential);
+  return [
+    CertificateType.COMMITTEE_RESIGN_COLD,
+    encodedCommitteeColdCred,
+    encodeAnchor(certificate.cert.anchor),
+  ];
+};
+
+export const encodeDRepRegCertificate = (
+  certificate: DRepRegCertificate
+): EncodedDRepRegCertificate => {
+  const encodedDRepCred = encodeCredential(certificate.cert.dRepCredential);
+
+  return [
+    CertificateType.DREP_REG,
+    encodedDRepCred,
+    certificate.cert.deposit,
+    encodeAnchor(certificate.cert.anchor),
+  ];
+};
+
+export const encodeDRepDeRegCertificate = (
+  certificate: DRepDeRegCertificate
+): EncodedDRepDeRegCertificate => {
+  const encodedDRepCred = encodeCredential(certificate.cert.dRepCredential);
+
+  return [CertificateType.DREP_DE_REG, encodedDRepCred, certificate.cert.deposit];
+};
+
+export const encodeDRepUpdateCertificate = (
+  certificate: DRepUpdateCertificate
+): EncodedDRepUpdateCertificate => {
+  const encodedDRepCred = encodeCredential(certificate.cert.dRepCredential);
+
+  return [CertificateType.DREP_UPDATE, encodedDRepCred, encodeAnchor(certificate.cert.anchor)];
 };
 
 export const encodeCertificates = (certificates: Array<Certificate>): Array<EncodedCertificate> => {
   const encodedCertificates: Array<EncodedCertificate> = [];
 
   certificates.forEach((certificate) => {
-    switch (certificate.certType) {
-      case CertificateType.STAKE_REGISTRATION:
+    switch (certificate.type) {
+      case CertificateType.STAKE_REGISTRATION: {
         encodedCertificates.push(encodeStakeRegistrationCertificate(certificate));
         break;
-      case CertificateType.STAKE_DE_REGISTRATION:
+      }
+      case CertificateType.STAKE_DE_REGISTRATION: {
         encodedCertificates.push(encodeStakeDeRegistrationCertificate(certificate));
         break;
-      case CertificateType.STAKE_DELEGATION:
+      }
+      case CertificateType.STAKE_DELEGATION: {
         encodedCertificates.push(encodeStakeDelegationCertificate(certificate));
         break;
+      }
+      case CertificateType.STAKE_KEY_REGISTRATION: {
+        encodedCertificates.push(encodeStakeKeyRegistrationCertificate(certificate));
+        break;
+      }
+      case CertificateType.STAKE_KEY_DE_REGISTRATION: {
+        encodedCertificates.push(encodeStakeKeyDeRegistrationCertificate(certificate));
+        break;
+      }
+      case CertificateType.VOTE_DELEGATION: {
+        encodedCertificates.push(encodeVoteDelegationCertificate(certificate));
+        break;
+      }
+      case CertificateType.STAKE_VOTE_DELEG: {
+        encodedCertificates.push(encodeStakeVoteDelegationCertificate(certificate));
+        break;
+      }
+      case CertificateType.STAKE_REG_DELEG: {
+        encodedCertificates.push(encodeStakeRegDelegationCertificate(certificate));
+        break;
+      }
+      case CertificateType.VOTE_REG_DELEG: {
+        encodedCertificates.push(encodeVoteRegDelegationCertificate(certificate));
+        break;
+      }
+      case CertificateType.STAKE_VOTE_REG_DELEG: {
+        encodedCertificates.push(encodeStakeVoteRegDelegationCertificate(certificate));
+        break;
+      }
+      case CertificateType.COMMITTEE_AUTH_HOT: {
+        encodedCertificates.push(encodeCommitteeAuthHotCertificate(certificate));
+        break;
+      }
+      case CertificateType.COMMITTEE_RESIGN_COLD: {
+        encodedCertificates.push(encodeCommitteeResignColdCertificate(certificate));
+        break;
+      }
+      case CertificateType.DREP_REG: {
+        encodedCertificates.push(encodeDRepRegCertificate(certificate));
+        break;
+      }
+      case CertificateType.DREP_DE_REG: {
+        encodedCertificates.push(encodeDRepDeRegCertificate(certificate));
+        break;
+      }
+      case CertificateType.DREP_UPDATE: {
+        encodedCertificates.push(encodeDRepUpdateCertificate(certificate));
+        break;
+      }
       default:
         throw new Error("unsupported certificate type");
     }
