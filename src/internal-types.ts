@@ -2,7 +2,7 @@
 import { Buffer } from "buffer";
 import { CborTag } from "@stricahq/cbors";
 import BigNumber from "bignumber.js";
-import { CertificateType, HashType, WitnessType } from "./types";
+import { CertificateType, HashType, VoterType, VoteType, WitnessType } from "./types";
 
 export type TokenBundle = Record<
   string, // this is policy id
@@ -36,6 +36,7 @@ export enum TransactionBodyItemType {
   COLLATERAL_OUTPUT = 16,
   TOTAL_COLLATERAL = 17,
   REFERENCE_INPUTS = 18,
+  VOTING_PROCEDURES = 19,
 }
 
 export enum OutputItemType {
@@ -192,5 +193,14 @@ export type EncodedNativeScript =
   | NativeScriptNOfK
   | NativeScriptInvalidBefore
   | NativeScriptInvalidAfter;
-
 // NativeScript types end
+
+// Voting Procedure encoding types
+export type EncodedGovActionId = [Buffer, number];
+export type EncodedVote = VoteType;
+export type EncodedVoter = [VoterType, Buffer];
+export type EncodedVotingProcedure = [EncodedVote, EncodedAnchor];
+export type EncodedVotingProcedures = Map<
+  EncodedVoter,
+  Map<EncodedGovActionId, EncodedVotingProcedure>
+>;
