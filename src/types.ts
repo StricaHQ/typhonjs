@@ -30,6 +30,20 @@ export enum PlutusScriptType {
   PlutusScriptV3 = "PlutusScriptV3",
 }
 
+export enum VoteType {
+  NO = 0,
+  YES = 1,
+  ABSTAIN = 2,
+}
+
+export enum VoterType {
+  CC_HOT_KEY = 0,
+  CC_HOT_SCRIPT = 1,
+  DREP_KEY = 2,
+  DREP_SCRIPT = 3,
+  POOL_KEY = 4,
+}
+
 export type HashCredential = {
   hash: Buffer;
   type: HashType.ADDRESS;
@@ -397,4 +411,25 @@ export type ProtocolParams = {
   maxTxSize?: number;
   maxValueSize: number;
   minFeeRefScriptCostPerByte: number;
+};
+
+export type GovActionId = {
+  txId: Buffer;
+  index: number;
+};
+
+export type Vote = {
+  govActionId: GovActionId;
+  vote: VoteType;
+  anchor: Anchor | null;
+};
+
+export type Voter = {
+  type: VoterType;
+  key: Credential;
+};
+
+export type VotingProcedure = {
+  voter: Voter;
+  votes: Array<Vote>;
 };

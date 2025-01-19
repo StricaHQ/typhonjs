@@ -30,6 +30,7 @@ import {
   Token,
   VKeyWitness,
   ReferenceInput,
+  VotingProcedure,
 } from "../types";
 import {
   encodeAuxiliaryData,
@@ -42,6 +43,7 @@ import {
   encodeWithdrawals,
   encodeWitnesses,
   encodeNativeScript,
+  encodeVotingProcedures,
 } from "../utils/encoder";
 import { hash32 } from "../utils/crypto";
 import { calculateMinUtxoAmountBabbage } from "../utils/utils";
@@ -75,6 +77,7 @@ export class Transaction {
   protected _isPlutusV3Transaction = false;
   protected mints: Array<Mint> = [];
   protected validityIntervalStart: number | undefined;
+  protected votingProcedures: Array<VotingProcedure> = [];
 
   constructor({ protocolParams }: { protocolParams: ProtocolParams }) {
     this._protocolParams = protocolParams;
@@ -345,6 +348,17 @@ export class Transaction {
     this.withdrawals.push(withdrawal);
   }
 
+  // add voting procedure to the transaction, used to vote on a governance proposal
+  addVotingProcedure(votingProcedure: VotingProcedure): void {
+    if (votingProcedure.voter.key.type === HashType.ADDRESS) {
+      this.requiredWitnesses.set(
+        votingProcedure.voter.key.hash.toString("hex"),
+        votingProcedure.voter.key.bipPath
+      );
+    }
+    this.votingProcedures.push(votingProcedure);
+  }
+
   setCollateralOutput(output: Output): void {
     const uOutput = output;
     uOutput.tokens = sortTokens(uOutput.tokens);
@@ -366,6 +380,9 @@ export class Transaction {
     return this.totalCollateral;
   }
 
+  /**
+   * This method will encode the transaction body to be included in the cbor
+   */
   protected transactionBody({
     extraOutputs,
     scriptDataHash,
@@ -429,6 +446,13 @@ export class Transaction {
     }
     if (!_.isEmpty(this.referenceInputs)) {
       encodedBody.set(TransactionBodyItemType.REFERENCE_INPUTS, encodeInputs(this.referenceInputs));
+    }
+
+    if (!_.isEmpty(this.votingProcedures)) {
+      encodedBody.set(
+        TransactionBodyItemType.VOTING_PROCEDURES,
+        encodeVotingProcedures(this.votingProcedures)
+      );
     }
 
     return encodedBody;
@@ -848,6 +872,10 @@ export class Transaction {
 
   getRequiredSigners(): Map<string, BipPath | undefined> {
     return this.requiredSigners;
+  }
+
+  getVotingProcedures(): Array<VotingProcedure> {
+    return this.votingProcedures;
   }
 
   setAuxiliaryData(auxData: AuxiliaryData): void {

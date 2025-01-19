@@ -42,6 +42,9 @@ import {
   Credential,
   DRepDeRegCertificate,
   DRepUpdateCertificate,
+  VotingProcedure,
+  Vote,
+  Voter,
 } from "../types";
 import { sanitizeMetadata } from "./helpers";
 import { hash32 } from "./crypto";
@@ -80,6 +83,10 @@ import {
   EncodedDRepRegCertificate,
   EncodedDRepDeRegCertificate,
   EncodedDRepUpdateCertificate,
+  EncodedVotingProcedures,
+  EncodedVoter,
+  EncodedGovActionId,
+  EncodedVotingProcedure,
 } from "../internal-types";
 
 export const encodeInputs = (inputs: Array<Input | ReferenceInput>): Array<EncodedInput> => {
@@ -694,4 +701,51 @@ export const encodeNativeScript = (nativeScript: any): EncodedNativeScript => {
     return [5, nativeScript.invalidAfter];
   }
   throw new Error("Invalid native script");
+};
+
+export const encodeVotingProcedures = (
+  votingProcedures: Array<VotingProcedure>
+): EncodedVotingProcedures => {
+  // combine voting procedures with the same voter
+  const vpMap: Record<string, { voter: Voter; votes: Array<Vote> }> = {};
+  for (const vps of votingProcedures) {
+    const voter = `${vps.voter.key.hash.toString("hex")}#${vps.voter.type}`;
+    if (!vpMap[voter]) {
+      vpMap[voter] = { voter: vps.voter, votes: vps.votes };
+    } else {
+      vpMap[voter].votes.push(...vps.votes);
+    }
+  }
+
+  // filter out duplicate votes, latest one wins
+  const filteredVotingProcedures: Array<VotingProcedure> = [];
+  for (const { voter, votes } of Object.values(vpMap)) {
+    const voteMap: Record<string, Vote> = {};
+    for (const vote of votes) {
+      const govActionId = `${vote.govActionId.txId.toString("hex")}#${vote.govActionId.index}`;
+      voteMap[govActionId] = vote;
+    }
+
+    filteredVotingProcedures.push({
+      voter: voter,
+      votes: Object.values(voteMap),
+    });
+  }
+
+  // encode voting procedures as per conway CDDL
+  const encodedVotingProcedures: EncodedVotingProcedures = new Map();
+  for (const { voter, votes } of Object.values(vpMap)) {
+    const encodedVoter: EncodedVoter = [voter.type, voter.key.hash];
+    const encodedVotes: Map<EncodedGovActionId, EncodedVotingProcedure> = new Map();
+    for (const vote of votes) {
+      const encodedGovActionId: EncodedGovActionId = [
+        vote.govActionId.txId,
+        vote.govActionId.index,
+      ];
+      const encodedVotingProcedure: EncodedVotingProcedure = [vote.vote, encodeAnchor(vote.anchor)];
+      encodedVotes.set(encodedGovActionId, encodedVotingProcedure);
+    }
+    encodedVotingProcedures.set(encodedVoter, encodedVotes);
+  }
+  return encodedVotingProcedures;
 };
