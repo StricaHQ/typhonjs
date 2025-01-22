@@ -31,6 +31,7 @@ import {
   VKeyWitness,
   ReferenceInput,
   VotingProcedure,
+  ProposalProcedure,
 } from "../types";
 import {
   encodeAuxiliaryData,
@@ -44,6 +45,7 @@ import {
   encodeWitnesses,
   encodeNativeScript,
   encodeVotingProcedures,
+  encodeProposalProcedures,
 } from "../utils/encoder";
 import { hash32 } from "../utils/crypto";
 import { calculateMinUtxoAmountBabbage } from "../utils/utils";
@@ -78,6 +80,7 @@ export class Transaction {
   protected mints: Array<Mint> = [];
   protected validityIntervalStart: number | undefined;
   protected votingProcedures: Array<VotingProcedure> = [];
+  protected proposalProcedures: Array<ProposalProcedure> = [];
 
   constructor({ protocolParams }: { protocolParams: ProtocolParams }) {
     this._protocolParams = protocolParams;
@@ -359,6 +362,11 @@ export class Transaction {
     this.votingProcedures.push(votingProcedure);
   }
 
+  addProposalProcedure(proposalProcedure: ProposalProcedure): void {
+    // no additional signatures required to submit a governance action
+    this.proposalProcedures.push(proposalProcedure);
+  }
+
   setCollateralOutput(output: Output): void {
     const uOutput = output;
     uOutput.tokens = sortTokens(uOutput.tokens);
@@ -452,6 +460,13 @@ export class Transaction {
       encodedBody.set(
         TransactionBodyItemType.VOTING_PROCEDURES,
         encodeVotingProcedures(this.votingProcedures)
+      );
+    }
+
+    if (!_.isEmpty(this.proposalProcedures)) {
+      encodedBody.set(
+        TransactionBodyItemType.PROPOSAL_PROCEDURES,
+        encodeProposalProcedures(this.proposalProcedures)
       );
     }
 
@@ -805,25 +820,37 @@ export class Transaction {
   }
 
   /**
-   * This method scans the certificates added in the transaction to calculate
-   * additional ADA required for transaction validity. Essentially ADA to be used
-   * in the deposit for stake key registration etc.
+   * This method scans the certificates and proposal procedures added in the transaction
+   * to calculate additional ADA required for transaction validity.
+   * 1. stake key registration deposit ADA
+   * 2. proposal procedure deposit ADA
    * @returns additional ADA required for a valid transaction
    */
   getAdditionalOutputAda(): BigNumber {
-    return _.reduce(
+    const depositInCerts = _.reduce(
       this.certificates,
       (result, cert) => {
         if (cert.type === CertificateType.STAKE_REGISTRATION) {
+          // legacy stake registration cert, use deposit value from protocol param
           return result.plus(this._protocolParams.stakeKeyDeposit);
         }
         if (cert.type === CertificateType.STAKE_KEY_REGISTRATION) {
-          return result.plus(this._protocolParams.stakeKeyDeposit);
+          return result.plus(cert.cert.deposit);
         }
         return result;
       },
       new BigNumber(0)
     );
+
+    const depositInProposalProcedure = _.reduce(
+      this.proposalProcedures,
+      (result, pp) => {
+        return result.plus(pp.deposit);
+      },
+      new BigNumber(0)
+    );
+
+    return depositInCerts.plus(depositInProposalProcedure);
   }
 
   /**
@@ -837,10 +864,11 @@ export class Transaction {
       this.certificates,
       (result, cert) => {
         if (cert.type === CertificateType.STAKE_DE_REGISTRATION) {
+          // legacy stake de registration certificate, use deposit value from protocol params
           return result.plus(this._protocolParams.stakeKeyDeposit);
         }
         if (cert.type === CertificateType.STAKE_KEY_DE_REGISTRATION) {
-          return result.plus(this._protocolParams.stakeKeyDeposit);
+          return result.plus(cert.cert.deposit);
         }
         return result;
       },
@@ -876,6 +904,10 @@ export class Transaction {
 
   getVotingProcedures(): Array<VotingProcedure> {
     return this.votingProcedures;
+  }
+
+  getProposalProcedures(): Array<ProposalProcedure> {
+    return this.proposalProcedures;
   }
 
   setAuxiliaryData(auxData: AuxiliaryData): void {
