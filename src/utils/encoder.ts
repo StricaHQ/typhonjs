@@ -45,6 +45,9 @@ import {
   VotingProcedure,
   Vote,
   Voter,
+  ProposalProcedure,
+  GovActionType,
+  ProtocolParamUpdate,
 } from "../types";
 import { sanitizeMetadata } from "./helpers";
 import { hash32 } from "./crypto";
@@ -87,6 +90,10 @@ import {
   EncodedVoter,
   EncodedGovActionId,
   EncodedVotingProcedure,
+  EncodedProposalProcedure,
+  EncodedGovAction,
+  EncodedProtocolParamUpdate,
+  EncodedConstitution,
 } from "../internal-types";
 
 export const encodeInputs = (inputs: Array<Input | ReferenceInput>): Array<EncodedInput> => {
@@ -748,4 +755,248 @@ export const encodeVotingProcedures = (
     encodedVotingProcedures.set(encodedVoter, encodedVotes);
   }
   return encodedVotingProcedures;
+};
+
+// encode protocol param change update data following the Conway CDDL specification
+export const encodeProtocolParamUpdate = (ppu: ProtocolParamUpdate) => {
+  const encodedParamUpdate: EncodedProtocolParamUpdate = new Map();
+  if (ppu.minFeeA) {
+    encodedParamUpdate.set(0, ppu.minFeeA);
+  }
+  if (ppu.minFeeB) {
+    encodedParamUpdate.set(1, ppu.minFeeB);
+  }
+  if (ppu.maxBlockBodySize) {
+    encodedParamUpdate.set(2, ppu.maxBlockBodySize);
+  }
+  if (ppu.maxTransactionSize) {
+    encodedParamUpdate.set(3, ppu.maxTransactionSize);
+  }
+  if (ppu.maxBlockHeaderSize) {
+    encodedParamUpdate.set(4, ppu.maxBlockHeaderSize);
+  }
+  if (ppu.stakeKeyDeposit) {
+    encodedParamUpdate.set(5, ppu.stakeKeyDeposit);
+  }
+  if (ppu.poolDeposit) {
+    encodedParamUpdate.set(6, ppu.poolDeposit);
+  }
+  if (ppu.poolRetireMaxEpoch) {
+    encodedParamUpdate.set(7, ppu.poolRetireMaxEpoch);
+  }
+  if (ppu.n) {
+    encodedParamUpdate.set(8, ppu.n);
+  }
+  if (ppu.pledgeInfluence) {
+    encodedParamUpdate.set(9, new cbors.CborTag(ppu.pledgeInfluence, 30));
+  }
+  if (ppu.expansionRate) {
+    encodedParamUpdate.set(10, new cbors.CborTag(ppu.expansionRate, 30));
+  }
+  if (ppu.treasuryGrowthRate) {
+    encodedParamUpdate.set(11, new cbors.CborTag(ppu.treasuryGrowthRate, 30));
+  }
+  if (ppu.minPoolCost) {
+    encodedParamUpdate.set(16, ppu.minPoolCost);
+  }
+  if (ppu.adaPerUtxoByte) {
+    encodedParamUpdate.set(17, ppu.adaPerUtxoByte);
+  }
+  if (ppu.costMdls) {
+    const encodedCostMdls = new Map();
+    if (ppu.costMdls.plutusV1) {
+      encodedCostMdls.set(0, ppu.costMdls.plutusV1);
+    }
+    if (ppu.costMdls.plutusV2) {
+      encodedCostMdls.set(1, ppu.costMdls.plutusV2);
+    }
+    if (ppu.costMdls.plutusV3) {
+      encodedCostMdls.set(2, ppu.costMdls.plutusV3);
+    }
+    encodedParamUpdate.set(18, encodedCostMdls);
+  }
+  if (ppu.exUnitPrices) {
+    const encodedExUnitPrices = [
+      new cbors.CborTag(ppu.exUnitPrices.mem, 30),
+      new cbors.CborTag(ppu.exUnitPrices.steps, 30),
+    ];
+    encodedParamUpdate.set(19, encodedExUnitPrices);
+  }
+  if (ppu.maxTxExUnits) {
+    encodedParamUpdate.set(20, [ppu.maxTxExUnits.mem, ppu.maxTxExUnits.steps]);
+  }
+  if (ppu.maxBlockExUnits) {
+    encodedParamUpdate.set(21, [ppu.maxBlockExUnits.mem, ppu.maxBlockExUnits.steps]);
+  }
+  if (ppu.maxValueSize) {
+    encodedParamUpdate.set(22, ppu.maxValueSize);
+  }
+  if (ppu.collateralPercent) {
+    encodedParamUpdate.set(23, ppu.collateralPercent);
+  }
+  if (ppu.maxCollateralInputs) {
+    encodedParamUpdate.set(24, ppu.maxCollateralInputs);
+  }
+  if (ppu.poolVotingThreshold) {
+    encodedParamUpdate.set(25, [
+      ppu.poolVotingThreshold.motionNoConfidence,
+      ppu.poolVotingThreshold.committeeNormal,
+      ppu.poolVotingThreshold.committeeNoConfidence,
+      ppu.poolVotingThreshold.hfInitiation,
+      ppu.poolVotingThreshold.securityParamVoting,
+    ]);
+  }
+  if (ppu.dRepVotingThreshold) {
+    encodedParamUpdate.set(26, [
+      ppu.dRepVotingThreshold.motionNoConfidence,
+      ppu.dRepVotingThreshold.committeeNormal,
+      ppu.dRepVotingThreshold.committeeNoConfidence,
+      ppu.dRepVotingThreshold.updateConstitution,
+      ppu.dRepVotingThreshold.hfInitiation,
+      ppu.dRepVotingThreshold.networkParamVoting,
+      ppu.dRepVotingThreshold.economicParamVoting,
+      ppu.dRepVotingThreshold.technicalParamVoting,
+      ppu.dRepVotingThreshold.govParamVoting,
+      ppu.dRepVotingThreshold.treasuryWithdrawal,
+    ]);
+  }
+  if (ppu.minCommitteeSize) {
+    encodedParamUpdate.set(27, ppu.minCommitteeSize);
+  }
+  if (ppu.committeeTermLimit) {
+    encodedParamUpdate.set(28, ppu.committeeTermLimit);
+  }
+  if (ppu.govActionValidity) {
+    encodedParamUpdate.set(29, ppu.govActionValidity);
+  }
+  if (ppu.govActionDeposit) {
+    encodedParamUpdate.set(30, ppu.govActionDeposit);
+  }
+  if (ppu.dRepDeposit) {
+    encodedParamUpdate.set(31, ppu.dRepDeposit);
+  }
+  if (ppu.dRepInactivity) {
+    encodedParamUpdate.set(32, ppu.dRepInactivity);
+  }
+  if (ppu.refScriptCostByte) {
+    encodedParamUpdate.set(33, new cbors.CborTag(ppu.refScriptCostByte, 30));
+  }
+
+  return encodedParamUpdate;
+};
+
+// encode proposal procedure following the Conway CDDL specification
+export const encodeProposalProcedures = (proposalProcedures: Array<ProposalProcedure>) => {
+  const encodedProposalProcedures: Array<EncodedProposalProcedure> = [];
+  for (const pp of proposalProcedures) {
+    let encodedGovAction: EncodedGovAction;
+    switch (pp.govAction.type) {
+      case GovActionType.PARAM_CHANGE_ACTION: {
+        let encodedGovActionId: EncodedGovActionId | null = null;
+        if (pp.govAction.action.prevActionId) {
+          encodedGovActionId = [
+            pp.govAction.action.prevActionId.txId,
+            pp.govAction.action.prevActionId.index,
+          ];
+        }
+        const encodedParamUpdate = encodeProtocolParamUpdate(
+          pp.govAction.action.protocolParamUpdate
+        );
+
+        encodedGovAction = [
+          0,
+          encodedGovActionId,
+          encodedParamUpdate,
+          pp.govAction.action.policyHash,
+        ];
+        break;
+      }
+      case GovActionType.HF_INIT_ACTION: {
+        let encodedGovActionId: EncodedGovActionId | null = null;
+        if (pp.govAction.action.prevActionId) {
+          encodedGovActionId = [
+            pp.govAction.action.prevActionId.txId,
+            pp.govAction.action.prevActionId.index,
+          ];
+        }
+        encodedGovAction = [1, encodedGovActionId, pp.govAction.action.protocolVersion];
+        break;
+      }
+      case GovActionType.TREASURY_WITHDRAW_ACTION: {
+        const encodedWithdrawals = new Map();
+        for (const w of pp.govAction.action.withdrawals) {
+          encodedWithdrawals.set(w.rewardAccount, w.amount);
+        }
+        encodedGovAction = [2, encodedWithdrawals, pp.govAction.action.policyHash];
+        break;
+      }
+      case GovActionType.NO_CONFIDENCE_ACTION: {
+        let encodedGovActionId: EncodedGovActionId | null = null;
+        if (pp.govAction.action.prevActionId) {
+          encodedGovActionId = [
+            pp.govAction.action.prevActionId.txId,
+            pp.govAction.action.prevActionId.index,
+          ];
+        }
+        encodedGovAction = [3, encodedGovActionId];
+        break;
+      }
+      case GovActionType.UPDATE_COMMITTEE_ACTION: {
+        let encodedGovActionId: EncodedGovActionId | null = null;
+        if (pp.govAction.action.prevActionId) {
+          encodedGovActionId = [
+            pp.govAction.action.prevActionId.txId,
+            pp.govAction.action.prevActionId.index,
+          ];
+        }
+
+        const encodedRemovedColdCreds = pp.govAction.action.removeColdCreds.map((cred) => {
+          return encodeCredential(cred);
+        });
+
+        const encodedAddColdCreds = new Map();
+        for (const addColdCred of pp.govAction.action.addColdCreds) {
+          encodedAddColdCreds.set(encodeCredential(addColdCred.credential), addColdCred.epoch);
+        }
+
+        encodedGovAction = [
+          4,
+          encodedGovActionId,
+          encodedRemovedColdCreds,
+          encodedAddColdCreds,
+          new cbors.CborTag(pp.govAction.action.threshold, 30),
+        ];
+        break;
+      }
+      case GovActionType.NEW_CONSTITUTION_ACTION: {
+        let encodedGovActionId: EncodedGovActionId | null = null;
+        if (pp.govAction.action.prevActionId) {
+          encodedGovActionId = [
+            pp.govAction.action.prevActionId.txId,
+            pp.govAction.action.prevActionId.index,
+          ];
+        }
+
+        const encodedConstitution: EncodedConstitution = [
+          encodeAnchor(pp.govAction.action.constitution.anchor),
+          pp.govAction.action.constitution.scriptHash,
+        ];
+
+        encodedGovAction = [5, encodedGovActionId, encodedConstitution];
+        break;
+      }
+      case GovActionType.INFO_ACTION: {
+        encodedGovAction = [6];
+        break;
+      }
+      default:
+        throw new Error("Unknown type of gov action");
+    }
+    encodedProposalProcedures.push([
+      pp.deposit,
+      pp.rewardAccount,
+      encodedGovAction,
+      encodeAnchor(pp.anchor),
+    ]);
+  }
 };

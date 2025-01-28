@@ -37,6 +37,7 @@ export enum TransactionBodyItemType {
   TOTAL_COLLATERAL = 17,
   REFERENCE_INPUTS = 18,
   VOTING_PROCEDURES = 19,
+  PROPOSAL_PROCEDURES = 20,
 }
 
 export enum OutputItemType {
@@ -195,6 +196,8 @@ export type EncodedNativeScript =
   | NativeScriptInvalidAfter;
 // NativeScript types end
 
+export type EncodedConstitution = [EncodedAnchor, Buffer | null];
+
 // Voting Procedure encoding types
 export type EncodedGovActionId = [Buffer, number];
 export type EncodedVote = VoteType;
@@ -204,3 +207,35 @@ export type EncodedVotingProcedures = Map<
   EncodedVoter,
   Map<EncodedGovActionId, EncodedVotingProcedure>
 >;
+
+// Proposal Procedure encoding types
+export type EncodedProtocolParamUpdate = Map<number, unknown>;
+export type EncodedProtocolVersion = [number, number];
+export type EncodedParamChangeAction = [
+  0,
+  EncodedGovActionId | null,
+  EncodedProtocolParamUpdate,
+  Buffer | null
+];
+
+export type EncodedHFInitAction = [1, EncodedGovActionId | null, EncodedProtocolVersion];
+export type EncodedTreasuryWithdrawalsAction = [2, Map<Buffer, BigNumber>, Buffer | null];
+export type EncodedNoConfidenceAction = [3, EncodedGovActionId | null];
+export type EncodedUpdateCommittee = [
+  4,
+  EncodedGovActionId | null,
+  Array<EncodedCommitteeColdCredential>,
+  Map<EncodedCommitteeColdCredential, number>,
+  CborTag
+];
+export type EncodedNewConstitution = [5, EncodedGovActionId | null, EncodedConstitution];
+export type EncodedInfoAction = [6];
+export type EncodedGovAction =
+  | EncodedParamChangeAction
+  | EncodedHFInitAction
+  | EncodedTreasuryWithdrawalsAction
+  | EncodedNoConfidenceAction
+  | EncodedUpdateCommittee
+  | EncodedNewConstitution
+  | EncodedInfoAction;
+export type EncodedProposalProcedure = [BigNumber, Buffer, EncodedGovAction, EncodedAnchor];
