@@ -66,5 +66,5 @@
     "README.md",
     "package.json"
   ],
-  "packageManager": "yarn@4.1.0"
+  "packageManager": "yarn@4.13.0"
 }

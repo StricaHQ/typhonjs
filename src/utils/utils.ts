@@ -48,11 +48,6 @@ export const calculateMinUtxoAmount = (
     .groupBy(({ policyId }) => policyId)
     .value() as TokenBundle;
 
-  const uniqueAssetNames = uniqueTokens.reduce((result: Record<string, boolean>, token) => {
-    result[token.assetName] = true;
-    return result;
-  }, {});
-
   const policyCount = _.reduce(
     tokenBundle,
     (result) => {
@@ -62,9 +57,21 @@ export const calculateMinUtxoAmount = (
     0
   );
 
+  // sumAssetNameLengths must be computed per-policy: the same asset name stored under
+  // two different policies occupies space in two separate CBOR maps, so it counts twice.
+  // ref: https://cardano-ledger.readthedocs.io/en/latest/explanations/min-utxo-mary.html
   const assetNameSize = _.reduce(
-    uniqueAssetNames,
-    (sum, status, assetName) => sum + Math.max(Buffer.from(assetName, "hex").length, 1),
+    tokenBundle,
+    (totalSum, policyTokens) => {
+      // Deduplicate asset names within this policy, then sum their byte lengths.
+      // Empty asset names (0-char) contribute 0 bytes per spec (sumAssetNameLengths).
+      const uniqueNamesInPolicy = new Set(policyTokens.map((t) => t.assetName));
+      const policyAssetNameSize = [...uniqueNamesInPolicy].reduce(
+        (sum, assetName) => sum + Buffer.from(assetName, "hex").length,
+        0
+      );
+      return totalSum + policyAssetNameSize;
+    },
     0
   );
 

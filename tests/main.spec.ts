@@ -46,6 +46,36 @@ describe("Typhonjs", (): void => {
         );
         expect(minUtxo.toNumber()).eq(2275812);
       });
+
+      it("empty asset name contributes 0 bytes to sumAssetNameLengths", () => {
+        const tokens = [
+          {
+            policyId: "30aa65f5efa96eaf3bc9a3e76ff47c6eac6472f908d6591f93e329fe",
+            assetName: "", // 0-character name — hex-encoded empty string
+            amount: new BigNumber(1),
+          },
+        ];
+        const minUtxo = utils.calculateMinUtxoAmount(tokens, stub.pParams.lovelacePerUtxoWord);
+        expect(minUtxo.toNumber()).eq(1310316);
+      });
+
+      it("same asset name under multiple policies is counted per policy", () => {
+        const sharedAssetName = "4142434445464748"; // 8-byte hex-encoded name
+        const tokens = [
+          {
+            policyId: "30aa65f5efa96eaf3bc9a3e76ff47c6eac6472f908d6591f93e329fe",
+            assetName: sharedAssetName,
+            amount: new BigNumber(1),
+          },
+          {
+            policyId: "d070f6b0e45fc3cd280e21fd4fcac4d59b3d35b23387eb6559455879",
+            assetName: sharedAssetName, // same name, different policy
+            amount: new BigNumber(1),
+          },
+        ];
+        const minUtxo = utils.calculateMinUtxoAmount(tokens, stub.pParams.lovelacePerUtxoWord);
+        expect(minUtxo.toNumber()).eq(1551690);
+      });
     });
 
     describe("Babbage Era Min UTXO", () => {
