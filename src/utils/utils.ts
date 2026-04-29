@@ -93,8 +93,9 @@ export const calculateMinUtxoAmountBabbage = (
   output: Output,
   utxoCostPerByte: BigNumber
 ): BigNumber => {
+  const sizeOutput: Output = { ...output, amount: new BigNumber(maxAdaAmount) };
   const minADA = new BigNumber(
-    160 + cbors.Encoder.encode(encodeOutput(output)).length
+    160 + cbors.Encoder.encode(encodeOutput(sizeOutput)).length
   ).multipliedBy(utxoCostPerByte);
   return minADA;
 };

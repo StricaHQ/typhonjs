@@ -94,7 +94,7 @@ describe("Typhonjs", (): void => {
           },
           stub.pParams.utxoCostPerByte
         );
-        expect(minUtxo.toNumber()).eq(1978290);
+        expect(minUtxo.toNumber()).eq(2012770);
       });
 
       it("calculate minUtxo with inline refScript", () => {
@@ -112,7 +112,7 @@ describe("Typhonjs", (): void => {
           },
           stub.pParams.utxoCostPerByte
         );
-        expect(minUtxo.toNumber()).eq(8236410);
+        expect(minUtxo.toNumber()).eq(8253650);
       });
 
       it("calculate minUtxo with tokens with inline plutusDatum", () => {
@@ -131,7 +131,7 @@ describe("Typhonjs", (): void => {
           },
           stub.pParams.utxoCostPerByte
         );
-        expect(minUtxo.toNumber()).eq(2659270);
+        expect(minUtxo.toNumber()).eq(2693750);
       });
 
       it("calculate minUtxo without tokens", () => {
@@ -149,7 +149,7 @@ describe("Typhonjs", (): void => {
           },
           stub.pParams.utxoCostPerByte
         );
-        expect(minUtxo.toNumber()).eq(961130);
+        expect(minUtxo.toNumber()).eq(995610);
       });
 
       it("calculate minUtxo with tokens", () => {
@@ -186,7 +186,7 @@ describe("Typhonjs", (): void => {
           },
           stub.pParams.utxoCostPerByte
         );
-        expect(minUtxo.toNumber()).eq(1120600);
+        expect(minUtxo.toNumber()).eq(1155080);
       });
 
       it("calculate minUtxo with tokens with hash", () => {
@@ -205,7 +205,7 @@ describe("Typhonjs", (): void => {
           },
           stub.pParams.utxoCostPerByte
         );
-        expect(minUtxo.toNumber()).eq(1801580);
+        expect(minUtxo.toNumber()).eq(1836060);
       });
     });
 
