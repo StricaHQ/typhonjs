@@ -51,7 +51,7 @@ import { hash32 } from "../utils/crypto";
 import { calculateMinUtxoAmountBabbage } from "../utils/utils";
 import transactionBuilder from "./helpers/transactionBuilder";
 import { paymentTransaction } from "./helpers/paymentTransaction";
-import { TransactionBodyItemType } from "../internal-types";
+import { TransactionBodyItemType, EncodedWitnesses } from "../internal-types";
 
 export class Transaction {
   protected _protocolParams: ProtocolParams;
@@ -499,6 +499,21 @@ export class Transaction {
     return encodedBody;
   }
 
+  private getScriptDataHashFromWitnesses(encodedWitnesses: EncodedWitnesses): Buffer | undefined {
+    const isPlutus =
+      this._isPlutusV1Transaction || this._isPlutusV2Transaction || this._isPlutusV3Transaction;
+    if (isPlutus && this._protocolParams.languageView == null) {
+      throw new Error("protocolParams.languageView is required for Plutus script transactions");
+    }
+    return generateScriptDataHash(
+      this._protocolParams.languageView,
+      encodedWitnesses,
+      this._isPlutusV1Transaction,
+      this._isPlutusV2Transaction,
+      this._isPlutusV3Transaction
+    );
+  }
+
   private transactionFee(size: number): BigNumber {
     return new BigNumber(size)
       .times(this._protocolParams.minFeeA)
@@ -524,8 +539,17 @@ export class Transaction {
       }
     }
 
-    const memPrice = new BigNumber(totalMem).times(this._protocolParams.priceMem);
-    const stepsPrice = new BigNumber(totalSteps).times(this._protocolParams.priceSteps);
+    if (totalMem > 0 || totalSteps > 0) {
+      if (this._protocolParams.priceMem == null) {
+        throw new Error("protocolParams.priceMem is required for Plutus script transactions");
+      }
+      if (this._protocolParams.priceSteps == null) {
+        throw new Error("protocolParams.priceSteps is required for Plutus script transactions");
+      }
+    }
+
+    const memPrice = new BigNumber(totalMem).times(this._protocolParams.priceMem ?? 0);
+    const stepsPrice = new BigNumber(totalSteps).times(this._protocolParams.priceSteps ?? 0);
     return memPrice.plus(stepsPrice).integerValue(BigNumber.ROUND_CEIL);
   }
 
@@ -533,7 +557,6 @@ export class Transaction {
     // sizeIncrement and multiplier are fixed numbers in cardano node
     const sizeIncrement = 25600;
     const multiplier = 1.2;
-    const minFeeRefScriptCostPerByte = this._protocolParams.minFeeRefScriptCostPerByte;
 
     const calculate = (acc: BigNumber, curTierPrice: BigNumber, size: number): BigNumber => {
       if (size < sizeIncrement) {
@@ -572,7 +595,11 @@ export class Transaction {
     }
 
     if (totalRefScriptSize > 0) {
-      return calculate(new BigNumber(0), minFeeRefScriptCostPerByte, totalRefScriptSize);
+      return calculate(
+        new BigNumber(0),
+        this._protocolParams.minFeeRefScriptCostPerByte,
+        totalRefScriptSize
+      );
     }
     return new BigNumber(0);
   }
@@ -604,13 +631,7 @@ export class Transaction {
       this.nativeScriptList,
       this.mints
     );
-    const scriptDataHash = generateScriptDataHash(
-      this._protocolParams.languageView,
-      encodedWitnesses,
-      this._isPlutusV1Transaction,
-      this._isPlutusV2Transaction,
-      this._isPlutusV3Transaction
-    );
+    const scriptDataHash = this.getScriptDataHashFromWitnesses(encodedWitnesses);
     const encodedBody = this.encodeTransactionBody({ extraOutputs, scriptDataHash });
     const transaction = [
       encodedBody,
@@ -656,13 +677,7 @@ export class Transaction {
       this.nativeScriptList,
       this.mints
     );
-    const scriptDataHash = generateScriptDataHash(
-      this._protocolParams.languageView,
-      encodedWitnesses,
-      this._isPlutusV1Transaction,
-      this._isPlutusV2Transaction,
-      this._isPlutusV3Transaction
-    );
+    const scriptDataHash = this.getScriptDataHashFromWitnesses(encodedWitnesses);
     const encodedBody = this.encodeTransactionBody({ scriptDataHash });
     const cborBody = cbors.Encoder.encode(encodedBody) as Buffer;
     return hash32(cborBody);
@@ -690,13 +705,7 @@ export class Transaction {
       this.nativeScriptList,
       this.mints
     );
-    const scriptDataHash = generateScriptDataHash(
-      this._protocolParams.languageView,
-      encodedWitnesses,
-      this._isPlutusV1Transaction,
-      this._isPlutusV2Transaction,
-      this._isPlutusV3Transaction
-    );
+    const scriptDataHash = this.getScriptDataHashFromWitnesses(encodedWitnesses);
     const encodedBody = this.encodeTransactionBody({ scriptDataHash });
     const transaction = [
       encodedBody,
@@ -806,15 +815,7 @@ export class Transaction {
       this.nativeScriptList,
       this.mints
     );
-    const scriptDataHash = generateScriptDataHash(
-      this._protocolParams.languageView,
-      encodedWitnesses,
-      this._isPlutusV1Transaction,
-      this._isPlutusV2Transaction,
-      this._isPlutusV3Transaction
-    );
-
-    return scriptDataHash;
+    return this.getScriptDataHashFromWitnesses(encodedWitnesses);
   }
 
   getCollateralAmount(): BigNumber {

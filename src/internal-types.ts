@@ -67,82 +67,82 @@ export type EncodedDRep = [0, Buffer] | [1, Buffer] | [2] | [3];
 export type EncodedAnchor = [string, Buffer] | null;
 export type EncodedStakeRegistrationCertificate = [
   CertificateType.STAKE_REGISTRATION,
-  EncodedCredential
+  EncodedCredential,
 ];
 export type EncodedStakeDeRegistrationCertificate = [
   CertificateType.STAKE_DE_REGISTRATION,
-  EncodedCredential
+  EncodedCredential,
 ];
 export type EncodedStakeDelegationCertificate = [
   CertificateType.STAKE_DELEGATION,
   EncodedCredential,
-  Buffer
+  Buffer,
 ];
 export type EncodedStakeKeyRegistrationCertificate = [
   CertificateType.STAKE_KEY_REGISTRATION,
   EncodedCredential,
-  BigNumber
+  BigNumber,
 ];
 export type EncodedStakeKeyDeRegistrationCertificate = [
   CertificateType.STAKE_KEY_DE_REGISTRATION,
   EncodedCredential,
-  BigNumber
+  BigNumber,
 ];
 export type EncodedVoteDelegationCertificate = [
   CertificateType.VOTE_DELEGATION,
   EncodedCredential,
-  EncodedDRep
+  EncodedDRep,
 ];
 export type EncodedStakeVoteDelegationCertificate = [
   CertificateType.STAKE_VOTE_DELEG,
   EncodedCredential,
   Buffer,
-  EncodedDRep
+  EncodedDRep,
 ];
 export type EncodedStakeRegDelegationCertificate = [
   CertificateType.STAKE_REG_DELEG,
   EncodedCredential,
   Buffer,
-  BigNumber
+  BigNumber,
 ];
 export type EncodedVoteRegDelegationCertificate = [
   CertificateType.VOTE_REG_DELEG,
   EncodedCredential,
   EncodedDRep,
-  BigNumber
+  BigNumber,
 ];
 export type EncodedStakeVoteRegDelegationCertificate = [
   CertificateType.STAKE_VOTE_REG_DELEG,
   EncodedCredential,
   Buffer,
   EncodedDRep,
-  BigNumber
+  BigNumber,
 ];
 export type EncodedCommitteeAuthHotCertificate = [
   CertificateType.COMMITTEE_AUTH_HOT,
   EncodedCommitteeColdCredential,
-  EncodedCommitteeHotCredential
+  EncodedCommitteeHotCredential,
 ];
 export type EncodedCommitteeResignColdCertificate = [
   CertificateType.COMMITTEE_RESIGN_COLD,
   EncodedCommitteeColdCredential,
-  EncodedAnchor
+  EncodedAnchor,
 ];
 export type EncodedDRepRegCertificate = [
   CertificateType.DREP_REG,
   EncodedDRepCredential,
   BigNumber,
-  EncodedAnchor
+  EncodedAnchor,
 ];
 export type EncodedDRepDeRegCertificate = [
   CertificateType.DREP_DE_REG,
   EncodedDRepCredential,
-  BigNumber
+  BigNumber,
 ];
 export type EncodedDRepUpdateCertificate = [
   CertificateType.DREP_UPDATE,
   EncodedDRepCredential,
-  EncodedAnchor
+  EncodedAnchor,
 ];
 export type EncodedCertificate =
   | EncodedStakeRegistrationCertificate
@@ -217,7 +217,7 @@ export type EncodedParamChangeAction = [
   0,
   EncodedGovActionId | null,
   EncodedProtocolParamUpdate,
-  Buffer | null
+  Buffer | null,
 ];
 
 export type EncodedHFInitAction = [1, EncodedGovActionId | null, EncodedProtocolVersion];
@@ -228,7 +228,7 @@ export type EncodedUpdateCommittee = [
   EncodedGovActionId | null,
   Array<EncodedCommitteeColdCredential>,
   Map<EncodedCommitteeColdCredential, number>,
-  CborTag
+  CborTag,
 ];
 export type EncodedNewConstitution = [5, EncodedGovActionId | null, EncodedConstitution];
 export type EncodedInfoAction = [6];

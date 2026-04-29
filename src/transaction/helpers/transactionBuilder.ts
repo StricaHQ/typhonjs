@@ -21,20 +21,32 @@ export function transactionBuilder({
   collateralInputs?: Array<CollateralInput>;
 }): Transaction {
   const verifyCollateral = (currentFee: BigNumber) => {
-    const currentCollateral = transaction.getCollateralAmount();
-    const requiredCollateral = currentFee
-      .times(transaction.protocolParams.collateralPercent)
-      .div(100);
     const isPlutusTx = transaction.isPlutusTransaction();
-    if (isPlutusTx && currentCollateral.lt(requiredCollateral)) {
-      throw new Error(
-        "Not enough collateral supplied, collaterals with tokens are not valid collaterals"
-      );
+    if (isPlutusTx) {
+      if (transaction.protocolParams.collateralPercent == null) {
+        throw new Error(
+          "protocolParams.collateralPercent is required for Plutus script transactions"
+        );
+      }
+      const currentCollateral = transaction.getCollateralAmount();
+      const requiredCollateral = currentFee
+        .times(transaction.protocolParams.collateralPercent)
+        .div(100);
+      if (currentCollateral.lt(requiredCollateral)) {
+        throw new Error(
+          "Not enough collateral supplied, collaterals with tokens are not valid collaterals"
+        );
+      }
     }
   };
 
   const addCollateral = (currentFee: BigNumber) => {
     if (collateralInputs && collateralInputs.length > 0) {
+      if (transaction.protocolParams.collateralPercent == null) {
+        throw new Error(
+          "protocolParams.collateralPercent is required for Plutus script transactions"
+        );
+      }
       const currentCollateral = transaction.getCollateralAmount();
       const requiredCollateral = currentFee
         .times(transaction.protocolParams.collateralPercent)

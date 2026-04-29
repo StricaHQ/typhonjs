@@ -99,7 +99,7 @@ export const sortTokens = (tokens: Array<Token>): Array<Token> => {
 };
 
 export const generateScriptDataHash = (
-  languageView: LanguageView,
+  languageView: LanguageView | undefined,
   witnesses: EncodedWitnesses,
   isPlutusV1: boolean,
   isPlutusV2: boolean,

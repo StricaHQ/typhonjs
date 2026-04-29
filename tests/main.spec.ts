@@ -17,33 +17,25 @@ describe("Typhonjs", (): void => {
     describe("PreBabbageEraMinUTXO", () => {
       it("calculate minUtxo without tokens", () => {
         const tokens = [];
-        const minUtxo = utils.calculateMinUtxoAmount(tokens, stub.pParams.lovelacePerUtxoWord);
+        const minUtxo = utils.calculateMinUtxoAmount(tokens, stub.lovelacePerUtxoWord);
         expect(minUtxo.toNumber()).eq(999978);
       });
 
       it("calculate minUtxo with tokens", () => {
         const tokens = stub.tokens;
-        const minUtxo = utils.calculateMinUtxoAmount(tokens, stub.pParams.lovelacePerUtxoWord);
+        const minUtxo = utils.calculateMinUtxoAmount(tokens, stub.lovelacePerUtxoWord);
         expect(minUtxo.toNumber()).eq(1930992);
       });
 
       it("calculate minUtxo without tokens with hash", () => {
         const tokens = [];
-        const minUtxo = utils.calculateMinUtxoAmount(
-          tokens,
-          stub.pParams.lovelacePerUtxoWord,
-          true
-        );
+        const minUtxo = utils.calculateMinUtxoAmount(tokens, stub.lovelacePerUtxoWord, true);
         expect(minUtxo.toNumber()).eq(1344798);
       });
 
       it("calculate minUtxo with tokens with hash", () => {
         const tokens = stub.tokens;
-        const minUtxo = utils.calculateMinUtxoAmount(
-          tokens,
-          stub.pParams.lovelacePerUtxoWord,
-          true
-        );
+        const minUtxo = utils.calculateMinUtxoAmount(tokens, stub.lovelacePerUtxoWord, true);
         expect(minUtxo.toNumber()).eq(2275812);
       });
 
@@ -55,7 +47,7 @@ describe("Typhonjs", (): void => {
             amount: new BigNumber(1),
           },
         ];
-        const minUtxo = utils.calculateMinUtxoAmount(tokens, stub.pParams.lovelacePerUtxoWord);
+        const minUtxo = utils.calculateMinUtxoAmount(tokens, stub.lovelacePerUtxoWord);
         expect(minUtxo.toNumber()).eq(1310316);
       });
 
@@ -73,7 +65,7 @@ describe("Typhonjs", (): void => {
             amount: new BigNumber(1),
           },
         ];
-        const minUtxo = utils.calculateMinUtxoAmount(tokens, stub.pParams.lovelacePerUtxoWord);
+        const minUtxo = utils.calculateMinUtxoAmount(tokens, stub.lovelacePerUtxoWord);
         expect(minUtxo.toNumber()).eq(1551690);
       });
     });

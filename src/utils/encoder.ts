@@ -651,7 +651,7 @@ export const encodePlutusData = (plutusData: PlutusData): EncodedPlutusData => {
 };
 
 export const encodeLanguageViews = (
-  languageView: LanguageView,
+  languageView: LanguageView | undefined,
   plutusV1: boolean,
   plutusV2: boolean,
   plutusV3: boolean
@@ -659,6 +659,9 @@ export const encodeLanguageViews = (
   const encodedLanguageView = new Map();
 
   if (plutusV1) {
+    if (!languageView || !languageView.PlutusScriptV1) {
+      throw new Error("Language view for PlutusV1 is required");
+    }
     // The encoding is Plutus V1 Specific
     // indefinite array encoding
     const indefCostMdls = cbors.IndefiniteArray.from(languageView.PlutusScriptV1);
@@ -670,10 +673,16 @@ export const encodeLanguageViews = (
     encodedLanguageView.set(langId, cborCostMdls);
   }
   if (plutusV2) {
+    if (!languageView || !languageView.PlutusScriptV2) {
+      throw new Error("Language view for PlutusV2 is required");
+    }
     // The encoding is Plutus V2 Specific
     encodedLanguageView.set(1, languageView.PlutusScriptV2);
   }
   if (plutusV3) {
+    if (!languageView || !languageView.PlutusScriptV3) {
+      throw new Error("Language view for PlutusV3 is required");
+    }
     encodedLanguageView.set(2, languageView.PlutusScriptV3);
   }
 

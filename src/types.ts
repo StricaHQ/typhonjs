@@ -447,21 +447,20 @@ export type Redeemer = {
 };
 
 export type LanguageView = {
-  PlutusScriptV1: Array<number>;
-  PlutusScriptV2: Array<number>;
-  PlutusScriptV3: Array<number>;
+  PlutusScriptV1?: Array<number>;
+  PlutusScriptV2?: Array<number>;
+  PlutusScriptV3?: Array<number>;
 };
 
 export type ProtocolParams = {
   minFeeA: BigNumber;
   minFeeB: BigNumber;
   stakeKeyDeposit: BigNumber;
-  lovelacePerUtxoWord: BigNumber;
   utxoCostPerByte: BigNumber;
-  collateralPercent: BigNumber;
-  priceSteps: BigNumber;
-  priceMem: BigNumber;
-  languageView: LanguageView;
+  collateralPercent?: BigNumber;
+  priceSteps?: BigNumber;
+  priceMem?: BigNumber;
+  languageView?: LanguageView;
   maxTxSize?: number;
   maxValueSize: number;
   minFeeRefScriptCostPerByte: BigNumber;

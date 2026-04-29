@@ -16,11 +16,13 @@ import {
   VotingProcedure,
 } from "../src/types";
 
+// used by alonzo era min utxo calculation
+export const lovelacePerUtxoWord = new BigNumber(34482);
+
 export const pParams: ProtocolParams = {
   minFeeA: new BigNumber(44),
   minFeeB: new BigNumber(155381),
   stakeKeyDeposit: new BigNumber(2000000),
-  lovelacePerUtxoWord: new BigNumber(34482),
   utxoCostPerByte: new BigNumber(4310),
   collateralPercent: new BigNumber(150),
   priceSteps: new BigNumber(0.0577),
