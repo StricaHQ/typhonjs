@@ -215,13 +215,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stricahq/cbors@npm:1.0.2":
-  version: 1.0.2
-  resolution: "@stricahq/cbors@npm:1.0.2"
+"@stricahq/cbors@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@stricahq/cbors@npm:1.1.0"
   dependencies:
-    bignumber.js: "npm:^9.0.2"
+    bignumber.js: "npm:^9.3.0"
     buffer: "npm:^6.0.3"
-  checksum: 10c0/9829ca4e8f66d7f92096730473d62c0c5226fe29a9ba606f4372b520e078df535d75409a6eb284a0f353b86c280c4933d149a6088031c00babd7ab84675eacd7
+  checksum: 10c0/8cf5995e286fb559fadd57188c87683b9ade9a06531e6e16e4c0933e4877a70b6ba8ec958362f2d55d384c101093fada3390755ea49ca6b32e429da43e8580b9
   languageName: node
   linkType: hard
 
@@ -229,7 +229,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@stricahq/typhonjs@workspace:."
   dependencies:
-    "@stricahq/cbors": "npm:1.0.2"
+    "@stricahq/cbors": "npm:^1.1.0"
     "@types/chai": "npm:^4.3.1"
     "@types/lodash": "npm:^4.14.182"
     "@types/mocha": "npm:^10.0.6"
@@ -949,10 +949,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bignumber.js@npm:^9.0.1, bignumber.js@npm:^9.0.2":
+"bignumber.js@npm:^9.0.1":
   version: 9.1.2
   resolution: "bignumber.js@npm:9.1.2"
   checksum: 10c0/e17786545433f3110b868725c449fa9625366a6e675cd70eb39b60938d6adbd0158cb4b3ad4f306ce817165d37e63f4aa3098ba4110db1d9a3b9f66abfbaf10d
+  languageName: node
+  linkType: hard
+
+"bignumber.js@npm:^9.3.0":
+  version: 9.3.1
+  resolution: "bignumber.js@npm:9.3.1"
+  checksum: 10c0/61342ba5fe1c10887f0ecf5be02ff6709271481aff48631f86b4d37d55a99b87ce441cfd54df3d16d10ee07ceab7e272fc0be430c657ffafbbbf7b7d631efb75
   languageName: node
   linkType: hard
 
